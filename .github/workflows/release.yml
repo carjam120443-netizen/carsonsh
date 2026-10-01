@@ -29,9 +29,25 @@ jobs:
         run: |
           PKG="carsonsh_${VERSION}_amd64"
           mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin"
+          mkdir -p "$PKG/usr/share/fonts/truetype/carsonsh"
+          mkdir -p "$PKG/usr/share/doc/carsonsh"
 
           cp build/carsonsh "$PKG/usr/bin/carsonsh"
           chmod 755 "$PKG/usr/bin/carsonsh"
+
+          curl -fsSL "https://github.com/google/fonts/raw/main/ofl/ubuntucondensed/UbuntuCondensed-Regular.ttf"             -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
+
+          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/OFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt" ||             curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
+
+          cat > "$PKG/DEBIAN/postinst" <<'EOF'
+          #!/bin/sh
+          set -e
+          if command -v fc-cache >/dev/null 2>&1; then
+              fc-cache -f >/dev/null 2>&1 || true
+          fi
+          exit 0
+          EOF
+          chmod 755 "$PKG/DEBIAN/postinst"
 
           cat > "$PKG/DEBIAN/control" <<EOF
           Package: carsonsh
@@ -40,8 +56,9 @@ jobs:
           Priority: optional
           Architecture: amd64
           Maintainer: Carson <carjam120443-netizen>
+          Depends: fontconfig
           Description: CarsonSH Unix shell
-           A small experimental Unix shell written in C.
+           A small experimental Unix shell written in C with Ubuntu Condensed font support.
           EOF
 
           dpkg-deb --build "$PKG"
