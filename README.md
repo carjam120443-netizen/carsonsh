@@ -18,6 +18,7 @@ The goal is to build a real shell from the ground up instead of wrapping an exis
 - Built-in `history` with persistent history storage
 - Built-in `reload` for reloading configuration
 - Built-in `help`
+- Built-in `theme` and `plugin` framework commands
 - External command execution through `PATH`
 - Basic command arguments
 - User configuration at `~/.config/carsonsh/config`
@@ -121,11 +122,84 @@ This installs to `~/.local/bin/carsonsh` by default.
 
 ## Debian package
 
-GitHub Actions automatically builds a Debian package on pushes to `main`. Releases include CarsonSH and the Ubuntu Condensed font support.
+GitHub Actions automatically builds a Debian package on pushes to `main`. Releases include CarsonSH, the Ubuntu Condensed font support, and the bundled CarsonSH Framework components.
+
+Install a release package with:
 
 ```bash
 sudo apt install ./carsonsh_0.1.X_amd64.deb
 ```
+
+The package installs the framework's bundled themes and plugins under:
+
+```text
+/usr/share/carsonsh/framework/
+```
+
+It also provides the `carsonsh-framework` command.
+
+### Framework installer commands
+
+List the themes and plugins bundled with the installed Debian package:
+
+```bash
+carsonsh-framework list themes
+carsonsh-framework list plugins
+```
+
+Install an individual bundled theme or plugin into your user configuration:
+
+```bash
+carsonsh-framework install theme carson-green
+carsonsh-framework install theme minimal
+
+carsonsh-framework install plugin git
+carsonsh-framework install plugin linux
+carsonsh-framework install plugin shortcuts
+```
+
+Update your user framework components from the version bundled with the installed package:
+
+```bash
+carsonsh-framework update
+```
+
+Then reload CarsonSH:
+
+```text
+reload
+```
+
+The framework installer is intentionally limited to bundled, inspectable `.conf` files. It does not execute arbitrary downloaded shell code.
+
+## CarsonSH Framework
+
+CarsonSH includes a lightweight theme and plugin framework, inspired by the organization of frameworks such as Oh-My-Fish while being implemented specifically for CarsonSH.
+
+The source framework lives in:
+
+```text
+framework/
+├── install.sh
+├── themes/
+│   ├── carson-green.conf
+│   └── minimal.conf
+└── plugins/
+    ├── git.conf
+    ├── linux.conf
+    └── shortcuts.conf
+```
+
+Inside CarsonSH:
+
+```text
+theme
+theme minimal
+plugin
+plugin git
+```
+
+Framework plugins are plain `.conf` files, making them easy to create, inspect, and share without requiring arbitrary code execution.
 
 ## Roadmap
 
@@ -136,6 +210,8 @@ sudo apt install ./carsonsh_0.1.X_amd64.deb
 - [x] Custom configuration
 - [x] Git-aware prompt
 - [x] Persistent command history
+- [x] CarsonSH Framework
+- [x] Debian package
 - [ ] Pipes
 - [ ] Redirection
 - [ ] Better line editing
@@ -155,35 +231,3 @@ CarsonSH is a learning project and will probably get weird along the way.
 ## License
 
 MIT
-
-
-## CarsonSH Framework
-
-CarsonSH now includes its own lightweight theme and plugin framework, inspired by the
-organization of frameworks such as Oh-My-Fish while being implemented specifically for
-CarsonSH.
-
-Install the bundled framework with:
-
-```sh
-sh ./framework/install.sh
-```
-
-It installs starter themes and plugins into `~/.config/carsonsh/` and enables:
-
-- **carson-green** — the default CarsonSH customization theme
-- **git** — Git command aliases
-- **linux** — common Linux aliases
-- **shortcuts** — small convenience aliases
-
-Inside CarsonSH:
-
-```
-theme
-theme minimal
-plugin
-plugin git
-```
-
-Framework plugins are plain `.conf` files, making them easy to create, inspect, and
-share without requiring arbitrary code execution.
