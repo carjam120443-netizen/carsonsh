@@ -31,3 +31,16 @@ CarsonSH also uses and/or is inspired by standard Unix concepts and ANSI termina
 Special thanks to **caarlos0** for the ideas and configuration examples in dotfiles.zsh that helped inspire CarsonSH's persistent history and reload features.
 
 CarsonSH is an independent project and is not affiliated with or endorsed by the upstream projects mentioned above.
+
+
+## Prompt theme inspiration
+
+The CarsonSH Framework includes native prompt styles inspired by documented styles from other shell prompt projects:
+
+- **Robby Russell / Oh My Zsh** — the compact arrow-and-directory concept is inspired by the Robby theme.
+- **Agnoster / Oh My Zsh** — the segmented two-line prompt concept is inspired by Agnoster.
+- **Pure** — the minimal directory-and-arrow concept is inspired by Pure.
+- **Spaceship** — the expressive cross-shell prompt concept is inspired by Spaceship.
+- **Powerlevel10k** — the compact two-line layout concept is inspired by Powerlevel10k.
+
+These CarsonSH themes are independently implemented in C/configuration and do not copy upstream theme source code. Theme names are used to identify the styles they are inspired by.
