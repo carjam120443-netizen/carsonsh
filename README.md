@@ -155,3 +155,35 @@ CarsonSH is a learning project and will probably get weird along the way.
 ## License
 
 MIT
+
+
+## CarsonSH Framework
+
+CarsonSH now includes its own lightweight theme and plugin framework, inspired by the
+organization of frameworks such as Oh-My-Fish while being implemented specifically for
+CarsonSH.
+
+Install the bundled framework with:
+
+```sh
+sh ./framework/install.sh
+```
+
+It installs starter themes and plugins into `~/.config/carsonsh/` and enables:
+
+- **carson-green** — the default CarsonSH customization theme
+- **git** — Git command aliases
+- **linux** — common Linux aliases
+- **shortcuts** — small convenience aliases
+
+Inside CarsonSH:
+
+```
+theme
+theme minimal
+plugin
+plugin git
+```
+
+Framework plugins are plain `.conf` files, making them easy to create, inspect, and
+share without requiring arbitrary code execution.
