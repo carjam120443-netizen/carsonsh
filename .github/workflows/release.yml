@@ -31,13 +31,18 @@ jobs:
           mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin"
           mkdir -p "$PKG/usr/share/fonts/truetype/carsonsh"
           mkdir -p "$PKG/usr/share/doc/carsonsh"
+          mkdir -p "$PKG/usr/share/carsonsh/framework/themes"
+          mkdir -p "$PKG/usr/share/carsonsh/framework/plugins"
 
           cp build/carsonsh "$PKG/usr/bin/carsonsh"
           chmod 755 "$PKG/usr/bin/carsonsh"
 
-          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UbuntuCondensed-Regular.ttf"             -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
+          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UbuntuCondensed-Regular.ttf" -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
 
-          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
+          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt" -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
+
+          cp framework/themes/*.conf "$PKG/usr/share/carsonsh/framework/themes/"
+          cp framework/plugins/*.conf "$PKG/usr/share/carsonsh/framework/plugins/"
 
           cat > "$PKG/usr/bin/carsonsh-font" <<'EOF'
           #!/bin/sh
@@ -55,6 +60,101 @@ jobs:
           fi
           EOF
           chmod 755 "$PKG/usr/bin/carsonsh-font"
+
+          cat > "$PKG/usr/bin/carsonsh-framework" <<'EOF'
+          #!/bin/sh
+          set -eu
+
+          FRAMEWORK="/usr/share/carsonsh/framework"
+          CONFIG="${HOME}/.config/carsonsh"
+          THEMES="${CONFIG}/themes"
+          PLUGINS="${CONFIG}/plugins"
+
+          usage() {
+              echo "CarsonSH Framework installer"
+              echo
+              echo "Usage:"
+              echo "  carsonsh-framework install theme NAME"
+              echo "  carsonsh-framework install plugin NAME"
+              echo "  carsonsh-framework list themes"
+              echo "  carsonsh-framework list plugins"
+              echo "  carsonsh-framework update"
+          }
+
+          install_theme() {
+              NAME="$1"
+              SRC="$FRAMEWORK/themes/${NAME}.conf"
+              mkdir -p "$THEMES"
+              if [ ! -f "$SRC" ]; then
+                  echo "carsonsh-framework: theme not found: $NAME" >&2
+                  exit 1
+              fi
+              cp "$SRC" "$THEMES/${NAME}.conf"
+              echo "Installed CarsonSH theme: $NAME"
+          }
+
+          install_plugin() {
+              NAME="$1"
+              SRC="$FRAMEWORK/plugins/${NAME}.conf"
+              mkdir -p "$PLUGINS"
+              if [ ! -f "$SRC" ]; then
+                  echo "carsonsh-framework: plugin not found: $NAME" >&2
+                  exit 1
+              fi
+              cp "$SRC" "$PLUGINS/${NAME}.conf"
+              echo "Installed CarsonSH plugin: $NAME"
+          }
+
+          list_components() {
+              DIR="$FRAMEWORK/$1"
+              if [ ! -d "$DIR" ]; then
+                  echo "No framework components available."
+                  exit 0
+              fi
+              find "$DIR" -maxdepth 1 -type f -name '*.conf' -printf '%f\n' |
+                  sed 's/\.conf$//' |
+                  sort
+          }
+
+          update_components() {
+              mkdir -p "$THEMES" "$PLUGINS"
+              cp "$FRAMEWORK/themes/"*.conf "$THEMES/" 2>/dev/null || true
+              cp "$FRAMEWORK/plugins/"*.conf "$PLUGINS/" 2>/dev/null || true
+              echo "CarsonSH Framework components updated from the installed package."
+          }
+
+          if [ "$#" -eq 0 ]; then
+              usage
+              exit 0
+          fi
+
+          case "$1" in
+              install)
+                  if [ "$#" -ne 3 ]; then usage; exit 1; fi
+                  case "$2" in
+                      theme) install_theme "$3" ;;
+                      plugin) install_plugin "$3" ;;
+                      *) usage; exit 1 ;;
+                  esac
+                  ;;
+              list)
+                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
+                  case "$2" in
+                      themes) list_components themes ;;
+                      plugins) list_components plugins ;;
+                      *) usage; exit 1 ;;
+                  esac
+                  ;;
+              update)
+                  update_components
+                  ;;
+              *)
+                  usage
+                  exit 1
+                  ;;
+          esac
+          EOF
+          chmod 755 "$PKG/usr/bin/carsonsh-framework"
 
           cat > "$PKG/DEBIAN/postinst" <<'EOF'
           #!/bin/sh
@@ -74,8 +174,8 @@ jobs:
           Architecture: amd64
           Maintainer: Carson <carjam120443-netizen>
           Depends: fontconfig
-          Description: CarsonSH Unix shell
-           A small experimental Unix shell written in C with Ubuntu Condensed font support.
+          Description: CarsonSH Unix shell and framework
+           A small experimental Unix shell written in C with Ubuntu Condensed font support and a native theme/plugin framework.
           EOF
 
           dpkg-deb --build "$PKG"
@@ -85,4 +185,4 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${VERSION}"
-          gh release create "$TAG"             "carsonsh_${VERSION}_amd64.deb"             --title "CarsonSH $TAG"             --generate-notes
+          gh release create "$TAG" "carsonsh_${VERSION}_amd64.deb" --title "CarsonSH $TAG" --generate-notes
