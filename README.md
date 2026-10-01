@@ -37,6 +37,14 @@ Then:
 ./carsonsh
 ```
 
+> **Note:** Depending on how you obtained the repository or which filesystem you are using, the shell scripts may not have their executable bit set. If you get a **Permission denied** error, run:
+>
+> ```bash
+> chmod +x build.sh install.sh uninstall.sh
+> ```
+>
+> Then run the scripts normally with `./build.sh` or `./install.sh`.
+
 Install locally:
 
 ```bash
