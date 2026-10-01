@@ -6,6 +6,13 @@ alias ll=eza -la
 alias la=eza -a
 alias cls=clear
 
+# Inspired by caarlos0/dotfiles.zsh: convenient shell reload alias.
+# CarsonSH implements this as the native 'reload' builtin.
+alias reload=reload
+
 # Package-manager shortcuts can be added here, for example:
 # alias updt=sudo apt update
 # alias inst=sudo apt install
+
+# CarsonSH history is stored in ~/.carsonsh_history.
+# The built-in history command shows the 20 most recent entries by default.
