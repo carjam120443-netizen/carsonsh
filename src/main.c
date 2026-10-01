@@ -32,6 +32,10 @@ static char loaded_plugins[MAX_FRAMEWORK_FILES][64];
 static size_t loaded_plugin_count = 0;
 static char active_theme[64] = "carson-green";
 
+/* Framework loaders are used by load_framework_file before their definitions. */
+static void load_framework_plugin(const char *name);
+static void load_framework_theme(const char *name);
+
 static int use_color(void) {
     return isatty(STDOUT_FILENO);
 }
@@ -120,7 +124,11 @@ static void load_config(void) {
     while (fgets(line, sizeof(line), fp)) {
         char *s = trim(line);
         if (*s == '\0' || *s == '#') continue;
-        if (strncmp(s, "alias ", 6) == 0) {
+        if (strncmp(s, "theme ", 6) == 0) {
+            load_framework_theme(trim(s + 6));
+        } else if (strncmp(s, "plugin ", 7) == 0) {
+            load_framework_plugin(trim(s + 7));
+        } else if (strncmp(s, "alias ", 6) == 0) {
             s += 6;
             char *eq = strchr(s, '=');
             if (!eq) continue;
