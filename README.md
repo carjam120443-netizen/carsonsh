@@ -162,6 +162,7 @@ Update your user framework components from the version bundled with the installe
 
 ```bash
 carsonsh-framework update
+carsonsh-framework select-theme <theme-name>
 ```
 
 Then reload CarsonSH:
@@ -231,3 +232,8 @@ CarsonSH is a learning project and will probably get weird along the way.
 ## License
 
 MIT
+
+
+### CarsonSH banner
+
+The startup ASCII logo is now opt-in. CarsonSH starts without the banner by default. Set `CARSONSH_BANNER=1` before launching CarsonSH if you want the logo and startup text.
