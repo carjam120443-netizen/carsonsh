@@ -12,6 +12,16 @@ CarsonSH does **not** copy or execute the original project's installer payload. 
 
 Copyright notice for the original project is retained here as attribution; see the original repository for its complete license text.
 
+## caarlos0/dotfiles.zsh
+
+CarsonSH's persistent history and configuration-reload ideas are **inspired by the shell configuration practices documented in caarlos0/dotfiles.zsh by caarlos0**:
+
+https://github.com/caarlos0/dotfiles.zsh
+
+In particular, CarsonSH takes inspiration from its Zsh configuration's persistent history settings, duplicate-history handling, and shell reload alias. CarsonSH reimplements these ideas independently in C rather than copying the Zsh configuration files.
+
+The original repository includes its own license; see the upstream repository for the complete license text.
+
 ## Other components
 
 CarsonSH also uses and/or is inspired by standard Unix concepts and ANSI terminal escape sequences. The Ubuntu Condensed font bundled by the Debian package is distributed under its own Ubuntu Font Licence.
