@@ -13,6 +13,7 @@
 #define INPUT_SIZE 4096
 #define MAX_ALIASES 64
 #define MAX_HISTORY 1000
+#define MAX_FRAMEWORK_FILES 32
 
 #define GREEN "\033[1;32m"
 #define CYAN "\033[1;36m"
@@ -27,6 +28,9 @@ static struct alias_entry aliases[MAX_ALIASES];
 static size_t alias_count = 0;
 static char history_entries[MAX_HISTORY][INPUT_SIZE];
 static size_t history_count = 0;
+static char loaded_plugins[MAX_FRAMEWORK_FILES][64];
+static size_t loaded_plugin_count = 0;
+static char active_theme[64] = "carson-green";
 
 static int use_color(void) {
     return isatty(STDOUT_FILENO);
@@ -58,6 +62,49 @@ static const char *find_alias(const char *name) {
     for (size_t i = 0; i < alias_count; i++)
         if (strcmp(aliases[i].name, name) == 0) return aliases[i].value;
     return NULL;
+}
+
+static void load_framework_file(const char *path) {
+    FILE *fp = fopen(path, "r");
+    if (!fp) return;
+    char line[512];
+    while (fgets(line, sizeof(line), fp)) {
+        char *s = trim(line);
+        if (*s == '\0' || *s == '#') continue;
+        if (strncmp(s, "theme ", 6) == 0) {
+            load_framework_theme(trim(s + 6));
+        } else if (strncmp(s, "plugin ", 7) == 0) {
+            load_framework_plugin(trim(s + 7));
+        } else if (strncmp(s, "alias ", 6) == 0) {
+            s += 6;
+            char *eq = strchr(s, '=');
+            if (!eq) continue;
+            *eq = '\0';
+            char *name = trim(s);
+            char *value = trim(eq + 1);
+            if (*name && *value) set_alias(name, value);
+        }
+    }
+    fclose(fp);
+}
+
+static void load_framework_plugin(const char *name) {
+    const char *home = getenv("HOME");
+    if (!home || !name || !*name || loaded_plugin_count >= MAX_FRAMEWORK_FILES) return;
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.config/carsonsh/plugins/%s.conf", home, name);
+    load_framework_file(path);
+    snprintf(loaded_plugins[loaded_plugin_count], sizeof(loaded_plugins[0]), "%s", name);
+    loaded_plugin_count++;
+}
+
+static void load_framework_theme(const char *name) {
+    const char *home = getenv("HOME");
+    if (!home || !name || !*name) return;
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.config/carsonsh/themes/%s.conf", home, name);
+    load_framework_file(path);
+    snprintf(active_theme, sizeof(active_theme), "%s", name);
 }
 
 static void load_config(void) {
@@ -226,6 +273,8 @@ static void print_help(void) {
     puts("  unalias NAME      Remove an alias");
     puts("  history [N]       Show recent command history");
     puts("  reload            Reload CarsonSH configuration");
+    puts("  theme [NAME]      Show or select a CarsonSH framework theme");
+    puts("  plugin [NAME]     Show or load a CarsonSH framework plugin");
     puts("  help              Show this help");
     puts("  exit [STATUS]     Exit CarsonSH");
 }
@@ -285,8 +334,49 @@ int main(void) {
 
         if (strcmp(argv[0], "reload") == 0) {
             alias_count = 0;
+            loaded_plugin_count = 0;
+            snprintf(active_theme, sizeof(active_theme), "%s", "carson-green");
             load_config();
             puts("CarsonSH configuration reloaded.");
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "theme") == 0) {
+            if (argc == 1) {
+                printf("Active CarsonSH theme: %s\n", active_theme);
+                last_status = 0;
+                continue;
+            }
+            if (argc != 2) {
+                fprintf(stderr, "carsonsh: theme: usage: theme [NAME]\n");
+                last_status = 1;
+                continue;
+            }
+            load_framework_theme(argv[1]);
+            printf("CarsonSH theme selected: %s\n", active_theme);
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "plugin") == 0) {
+            if (argc == 1) {
+                if (loaded_plugin_count == 0) puts("No CarsonSH framework plugins loaded.");
+                else {
+                    puts("Loaded CarsonSH framework plugins:");
+                    for (size_t i = 0; i < loaded_plugin_count; i++)
+                        printf("  %s\n", loaded_plugins[i]);
+                }
+                last_status = 0;
+                continue;
+            }
+            if (argc != 2) {
+                fprintf(stderr, "carsonsh: plugin: usage: plugin [NAME]\n");
+                last_status = 1;
+                continue;
+            }
+            load_framework_plugin(argv[1]);
+            printf("CarsonSH plugin loaded: %s\n", argv[1]);
             last_status = 0;
             continue;
         }
