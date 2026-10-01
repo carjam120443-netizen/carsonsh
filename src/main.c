@@ -12,6 +12,7 @@
 #define MAX_ARGS 128
 #define INPUT_SIZE 4096
 #define MAX_ALIASES 64
+#define MAX_HISTORY 1000
 
 #define GREEN "\033[1;32m"
 #define CYAN "\033[1;36m"
@@ -24,6 +25,8 @@ struct alias_entry {
 
 static struct alias_entry aliases[MAX_ALIASES];
 static size_t alias_count = 0;
+static char history_entries[MAX_HISTORY][INPUT_SIZE];
+static size_t history_count = 0;
 
 static int use_color(void) {
     return isatty(STDOUT_FILENO);
@@ -81,6 +84,61 @@ static void load_config(void) {
         }
     }
     fclose(fp);
+}
+
+static void load_history(void) {
+    const char *home = getenv("HOME");
+    if (!home) return;
+
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.carsonsh_history", home);
+    FILE *fp = fopen(path, "r");
+    if (!fp) return;
+
+    char line[INPUT_SIZE];
+    while (fgets(line, sizeof(line), fp)) {
+        line[strcspn(line, "\r\n")] = '\0';
+        if (*line == '\0') continue;
+
+        if (history_count >= MAX_HISTORY) {
+            memmove(history_entries, history_entries + 1,
+                    (MAX_HISTORY - 1) * sizeof(history_entries[0]));
+            history_count = MAX_HISTORY - 1;
+        }
+        snprintf(history_entries[history_count], sizeof(history_entries[0]), "%s", line);
+        history_count++;
+    }
+    fclose(fp);
+}
+
+static void save_history_entry(const char *line) {
+    const char *home = getenv("HOME");
+    if (!home || !line || !*line) return;
+
+    /* Match the useful dotfile behavior of ignoring consecutive duplicates. */
+    if (history_count > 0 && strcmp(history_entries[history_count - 1], line) == 0)
+        return;
+
+    if (history_count >= MAX_HISTORY) {
+        memmove(history_entries, history_entries + 1,
+                (MAX_HISTORY - 1) * sizeof(history_entries[0]));
+        history_count = MAX_HISTORY - 1;
+    }
+    snprintf(history_entries[history_count], sizeof(history_entries[0]), "%s", line);
+    history_count++;
+
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.carsonsh_history", home);
+    FILE *fp = fopen(path, "a");
+    if (!fp) return;
+    fprintf(fp, "%s\n", line);
+    fclose(fp);
+}
+
+static void print_history(size_t limit) {
+    size_t start = history_count > limit ? history_count - limit : 0;
+    for (size_t i = start; i < history_count; i++)
+        printf("%zu  %s\n", i + 1, history_entries[i]);
 }
 
 static void print_banner(void) {
@@ -166,6 +224,8 @@ static void print_help(void) {
     puts("  echo [TEXT]       Print text");
     puts("  alias [N=VALUE]   List or define an alias");
     puts("  unalias NAME      Remove an alias");
+    puts("  history [N]       Show recent command history");
+    puts("  reload            Reload CarsonSH configuration");
     puts("  help              Show this help");
     puts("  exit [STATUS]     Exit CarsonSH");
 }
@@ -177,6 +237,7 @@ int main(void) {
     int last_status = 0;
 
     load_config();
+    load_history();
     print_banner();
 
     while (1) {
@@ -197,6 +258,8 @@ int main(void) {
         char *line = trim(input);
         if (*line == '\0') continue;
 
+        save_history_entry(line);
+
         int argc = split_args(line, argv, MAX_ARGS);
         if (argc == 0) continue;
 
@@ -216,6 +279,31 @@ int main(void) {
 
         if (strcmp(argv[0], "help") == 0) {
             print_help();
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "reload") == 0) {
+            alias_count = 0;
+            load_config();
+            puts("CarsonSH configuration reloaded.");
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "history") == 0) {
+            size_t limit = 20;
+            if (argc > 1) {
+                char *end = NULL;
+                unsigned long requested = strtoul(argv[1], &end, 10);
+                if (!end || *end != '\0' || requested == 0) {
+                    fprintf(stderr, "carsonsh: history: usage: history [N]\n");
+                    last_status = 1;
+                    continue;
+                }
+                limit = requested > MAX_HISTORY ? MAX_HISTORY : (size_t)requested;
+            }
+            print_history(limit);
             last_status = 0;
             continue;
         }
