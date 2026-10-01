@@ -1,0 +1,11 @@
+# CarsonSH configuration
+# Copy to ~/.config/carsonsh/config
+
+# Oh-My-Shell-inspired aliases
+alias ll=eza -la
+alias la=eza -a
+alias cls=clear
+
+# Package-manager shortcuts can be added here, for example:
+# alias updt=sudo apt update
+# alias inst=sudo apt install
