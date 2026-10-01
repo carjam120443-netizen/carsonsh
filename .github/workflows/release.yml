@@ -39,6 +39,23 @@ jobs:
 
           curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/OFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt" ||             curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
 
+          cat > "$PKG/usr/bin/carsonsh-font" <<'EOF'
+          #!/bin/sh
+          set -eu
+          FONT="/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
+
+          if [ -f "$FONT" ]; then
+              echo "Ubuntu Condensed is installed:"
+              echo "  $FONT"
+              echo
+              echo "Set your terminal emulator's font to: Ubuntu Condensed"
+          else
+              echo "CarsonSH: Ubuntu Condensed is not installed." >&2
+              exit 1
+          fi
+          EOF
+          chmod 755 "$PKG/usr/bin/carsonsh-font"
+
           cat > "$PKG/DEBIAN/postinst" <<'EOF'
           #!/bin/sh
           set -e
