@@ -31,6 +31,7 @@ static size_t history_count = 0;
 static char loaded_plugins[MAX_FRAMEWORK_FILES][64];
 static size_t loaded_plugin_count = 0;
 static char active_theme[64] = "carson-green";
+static char prompt_style[64] = "carson-green";
 
 /* Framework loaders are used by load_framework_file before their definitions. */
 static void load_framework_plugin(const char *name);
@@ -223,6 +224,52 @@ static void print_git_branch(void) {
     pclose(fp);
 }
 
+static void print_prompt(const char *cwd) {
+    if (strcmp(prompt_style, "minimal") == 0) {
+        if (use_color()) printf(GREEN);
+        printf("carsonsh:%s $ ", cwd);
+        if (use_color()) printf(RESET);
+    } else if (strcmp(prompt_style, "pure") == 0) {
+        if (use_color()) printf(GREEN);
+        printf("%s", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        printf(" ❯ ");
+    } else if (strcmp(prompt_style, "robbyrussell") == 0) {
+        if (use_color()) printf(GREEN);
+        printf("➜  %s", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        printf(" $ ");
+    } else if (strcmp(prompt_style, "agnoster") == 0) {
+        if (use_color()) printf(GREEN);
+        printf("┌─[%s]", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        putchar('\n');
+        if (use_color()) printf(GREEN);
+        printf("└─➤ ");
+        if (use_color()) printf(RESET);
+    } else if (strcmp(prompt_style, "spaceship") == 0) {
+        if (use_color()) printf(CYAN);
+        printf("🚀 %s", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        printf(" ➜ ");
+    } else if (strcmp(prompt_style, "powerlevel10k") == 0) {
+        if (use_color()) printf(GREEN);
+        printf("╭─%s", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        putchar('\n');
+        if (use_color()) printf(GREEN);
+        printf("╰─❯ ");
+        if (use_color()) printf(RESET);
+    } else {
+        print_prompt(cwd);
+    }
+}
+
 static int split_args(char *line, char *argv[], size_t max_args) {
     size_t argc = 0;
     char *p = line;
@@ -344,6 +391,7 @@ int main(void) {
             alias_count = 0;
             loaded_plugin_count = 0;
             snprintf(active_theme, sizeof(active_theme), "%s", "carson-green");
+            snprintf(prompt_style, sizeof(prompt_style), "%s", "carson-green");
             load_config();
             puts("CarsonSH configuration reloaded.");
             last_status = 0;
