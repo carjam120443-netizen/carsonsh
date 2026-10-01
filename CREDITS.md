@@ -25,3 +25,9 @@ The original repository includes its own license; see the upstream repository fo
 ## Other components
 
 CarsonSH also uses and/or is inspired by standard Unix concepts and ANSI terminal escape sequences. The Ubuntu Condensed font bundled by the Debian package is distributed under its own Ubuntu Font Licence.
+
+## Additional thanks
+
+Special thanks to **caarlos0** for the ideas and configuration examples in dotfiles.zsh that helped inspire CarsonSH's persistent history and reload features.
+
+CarsonSH is an independent project and is not affiliated with or endorsed by the upstream projects mentioned above.
