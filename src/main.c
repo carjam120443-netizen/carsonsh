@@ -295,7 +295,7 @@ int main(void) {
 
     load_config();
     load_history();
-    print_banner();
+    if (getenv("CARSONSH_BANNER")) print_banner();
 
     while (1) {
         char cwd[PATH_MAX];
