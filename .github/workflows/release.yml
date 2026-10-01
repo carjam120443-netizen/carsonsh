@@ -45,7 +45,6 @@ jobs:
           EOF
 
           dpkg-deb --build "$PKG"
-          mv "$PKG.deb" "carsonsh_${VERSION}_amd64.deb"
 
       - name: Create GitHub release
         env:
