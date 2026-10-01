@@ -35,9 +35,9 @@ jobs:
           cp build/carsonsh "$PKG/usr/bin/carsonsh"
           chmod 755 "$PKG/usr/bin/carsonsh"
 
-          curl -fsSL "https://github.com/google/fonts/raw/main/ofl/ubuntucondensed/UbuntuCondensed-Regular.ttf"             -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
+          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UbuntuCondensed-Regular.ttf"             -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
 
-          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/OFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt" ||             curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
+          curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt"             -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
 
           cat > "$PKG/usr/bin/carsonsh-font" <<'EOF'
           #!/bin/sh
