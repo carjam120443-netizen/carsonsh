@@ -1,0 +1,54 @@
+name: Build and Release Debian Package
+
+on:
+  push:
+    tags:
+      - "v*"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  release-deb:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+
+      - name: Build CarsonSH
+        run: |
+          chmod +x build.sh
+          ./build.sh
+
+      - name: Build Debian package
+        env:
+          VERSION: 0.1.0
+        run: |
+          PKG="carsonsh_${VERSION}_amd64"
+          mkdir -p "$PKG/DEBIAN"
+          mkdir -p "$PKG/usr/bin"
+
+          cp build/carsonsh "$PKG/usr/bin/carsonsh"
+          chmod 755 "$PKG/usr/bin/carsonsh"
+
+          cat > "$PKG/DEBIAN/control" <<EOF
+          Package: carsonsh
+          Version: ${VERSION}
+          Section: shells
+          Priority: optional
+          Architecture: amd64
+          Maintainer: Carson <carjam120443-netizen>
+          Description: CarsonSH Unix shell
+           A small experimental Unix shell written in C.
+          EOF
+
+          dpkg-deb --build "$PKG"
+          mv "$PKG.deb" carsonsh_${VERSION}_amd64.deb
+
+      - name: Create GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "${GITHUB_REF_NAME}"             carsonsh_0.1.0_amd64.deb             --title "CarsonSH ${GITHUB_REF_NAME}"             --generate-notes
