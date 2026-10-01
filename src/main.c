@@ -12,6 +12,25 @@
 #define MAX_ARGS 128
 #define INPUT_SIZE 4096
 
+#define GREEN "\033[1;32m"
+#define RESET "\033[0m"
+
+static int use_color(void) {
+    return isatty(STDOUT_FILENO);
+}
+
+static void print_banner(void) {
+    if (use_color()) printf(GREEN);
+    printf("  ____                           ____  _   _\n");
+    printf(" / ___|__ _ _ __ ___  ___  ___ / ___|| | | |\n");
+    printf("| |   / _` | '__/ __|/ _ \/ __|\\___ \\| |_| |\n");
+    printf("| |__| (_| | |  \\__ \\  __/ (__  ___) | |_| |\n");
+    printf(" \\____\\__,_|_|  |___/\\___|\\___||____/ \\___/\n");
+    printf("CarsonSH 0.1 - a small Unix shell\n");
+    printf("Type 'exit' to leave.\n");
+    if (use_color()) printf(RESET);
+}
+
 static char *trim(char *s) {
     while (isspace((unsigned char)*s)) s++;
     if (*s == '\0') return s;
@@ -74,12 +93,16 @@ int main(void) {
     char *argv[MAX_ARGS];
     int last_status = 0;
 
-    printf("CarsonSH 0.1\nType 'exit' to leave.\n");
+    print_banner();
 
     while (1) {
         char cwd[PATH_MAX];
         if (!getcwd(cwd, sizeof(cwd))) snprintf(cwd, sizeof(cwd), "?");
-        printf("carsonsh:%s$ ", cwd);
+
+        if (use_color()) printf(GREEN);
+        printf("┌──(carson㉿carsonsh)-[%s]\n", cwd);
+        printf("└─$ ");
+        if (use_color()) printf(RESET);
         fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) { putchar('\n'); break; }
