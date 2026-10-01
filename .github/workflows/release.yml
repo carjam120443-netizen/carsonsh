@@ -71,14 +71,21 @@ jobs:
           PLUGINS="${CONFIG}/plugins"
 
           usage() {
-              echo "CarsonSH Framework installer"
+              echo "CarsonSH Framework"
               echo
               echo "Usage:"
+              echo "  carsonsh-framework select-theme NAME"
               echo "  carsonsh-framework install theme NAME"
               echo "  carsonsh-framework install plugin NAME"
               echo "  carsonsh-framework list themes"
               echo "  carsonsh-framework list plugins"
               echo "  carsonsh-framework update"
+              echo
+              echo "Shortcuts:"
+              echo "  carsonsh-framework theme NAME    Install a theme"
+              echo "  carsonsh-framework plugin NAME   Install a plugin"
+              echo "  carsonsh-framework themes        List themes"
+              echo "  carsonsh-framework plugins       List plugins"
           }
 
           install_theme() {
@@ -128,7 +135,52 @@ jobs:
               exit 0
           fi
 
+          select_theme() {
+              NAME="$1"
+              SRC="$FRAMEWORK/themes/${NAME}.conf"
+              CONFIG_FILE="${CONFIG}/config"
+              mkdir -p "$CONFIG" "$THEMES"
+              if [ ! -f "$THEMES/${NAME}.conf" ]; then
+                  if [ -f "$SRC" ]; then
+                      cp "$SRC" "$THEMES/${NAME}.conf"
+                  else
+                      echo "carsonsh-framework: theme not found: $NAME" >&2
+                      exit 1
+                  fi
+              fi
+              TMP="${CONFIG_FILE}.tmp"
+              if [ -f "$CONFIG_FILE" ]; then
+                  grep -v '^[[:space:]]*theme[[:space:]]' "$CONFIG_FILE" > "$TMP" || true
+              else
+                  : > "$TMP"
+              fi
+              printf 'theme %s\n' "$NAME" >> "$TMP"
+              mv "$TMP" "$CONFIG_FILE"
+              echo "CarsonSH theme selected: $NAME"
+              echo "Run 'reload' in CarsonSH to apply it."
+          }
+
           case "$1" in
+              select-theme)
+                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
+                  select_theme "$2"
+                  ;;
+              theme)
+                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
+                  install_theme "$2"
+                  ;;
+              plugin)
+                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
+                  install_plugin "$2"
+                  ;;
+              themes)
+                  if [ "$#" -ne 1 ]; then usage; exit 1; fi
+                  list_components themes
+                  ;;
+              plugins)
+                  if [ "$#" -ne 1 ]; then usage; exit 1; fi
+                  list_components plugins
+                  ;;
               install)
                   if [ "$#" -ne 3 ]; then usage; exit 1; fi
                   case "$2" in
