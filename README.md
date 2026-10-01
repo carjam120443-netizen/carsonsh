@@ -163,6 +163,15 @@ Update your user framework components from the version bundled with the installe
 ```bash
 carsonsh-framework update
 carsonsh-framework select-theme <theme-name>
+
+For example:
+
+```bash
+carsonsh-framework themes
+carsonsh-framework select-theme pure
+```
+
+The additional themes are native CarsonSH prompt implementations inspired by well-known shell prompt styles; CarsonSH does not copy their upstream shell code.
 ```
 
 Then reload CarsonSH:
@@ -184,7 +193,12 @@ framework/
 ├── install.sh
 ├── themes/
 │   ├── carson-green.conf
-│   └── minimal.conf
+│   ├── minimal.conf
+│   ├── robbyrussell.conf
+│   ├── agnoster.conf
+│   ├── pure.conf
+│   ├── spaceship.conf
+│   └── powerlevel10k.conf
 └── plugins/
     ├── git.conf
     ├── linux.conf
