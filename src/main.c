@@ -11,24 +11,22 @@
 
 #define MAX_ARGS 128
 #define INPUT_SIZE 4096
+#define MAX_ALIASES 64
 
 #define GREEN "\033[1;32m"
+#define CYAN "\033[1;36m"
 #define RESET "\033[0m"
+
+struct alias_entry {
+    char name[64];
+    char value[256];
+};
+
+static struct alias_entry aliases[MAX_ALIASES];
+static size_t alias_count = 0;
 
 static int use_color(void) {
     return isatty(STDOUT_FILENO);
-}
-
-static void print_banner(void) {
-    if (use_color()) printf(GREEN);
-    printf("  ____                           ____  _   _\n");
-    printf(" / ___|__ _ _ __ ___  ___  ___ / ___|| | | |\n");
-    printf("| |   / _` | '__/ __|/ _ \/ __|\\___ \\| |_| |\n");
-    printf("| |__| (_| | |  \\__ \\  __/ (__  ___) | |_| |\n");
-    printf(" \\____\\__,_|_|  |___/\\___|\\___||____/ \\___/\n");
-    printf("CarsonSH 0.1 - a small Unix shell\n");
-    printf("Type 'exit' to leave.\n");
-    if (use_color()) printf(RESET);
 }
 
 static char *trim(char *s) {
@@ -37,6 +35,79 @@ static char *trim(char *s) {
     char *end = s + strlen(s) - 1;
     while (end > s && isspace((unsigned char)*end)) *end-- = '\0';
     return s;
+}
+
+static int set_alias(const char *name, const char *value) {
+    for (size_t i = 0; i < alias_count; i++) {
+        if (strcmp(aliases[i].name, name) == 0) {
+            snprintf(aliases[i].value, sizeof(aliases[i].value), "%s", value);
+            return 0;
+        }
+    }
+    if (alias_count >= MAX_ALIASES) return 1;
+    snprintf(aliases[alias_count].name, sizeof(aliases[alias_count].name), "%s", name);
+    snprintf(aliases[alias_count].value, sizeof(aliases[alias_count].value), "%s", value);
+    alias_count++;
+    return 0;
+}
+
+static const char *find_alias(const char *name) {
+    for (size_t i = 0; i < alias_count; i++)
+        if (strcmp(aliases[i].name, name) == 0) return aliases[i].value;
+    return NULL;
+}
+
+static void load_config(void) {
+    const char *home = getenv("HOME");
+    if (!home) return;
+
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.config/carsonsh/config", home);
+    FILE *fp = fopen(path, "r");
+    if (!fp) return;
+
+    char line[512];
+    while (fgets(line, sizeof(line), fp)) {
+        char *s = trim(line);
+        if (*s == '\0' || *s == '#') continue;
+        if (strncmp(s, "alias ", 6) == 0) {
+            s += 6;
+            char *eq = strchr(s, '=');
+            if (!eq) continue;
+            *eq = '\0';
+            char *name = trim(s);
+            char *value = trim(eq + 1);
+            if (*name && *value) set_alias(name, value);
+        }
+    }
+    fclose(fp);
+}
+
+static void print_banner(void) {
+    if (use_color()) printf(GREEN);
+    printf("  ____                           ____  _   _\n");
+    printf(" / ___|__ _ _ __ ___  ___  ___ / ___|| | | |\n");
+    printf("| |   / _' | '__/ __|/ _ \\/ __|\\___ \\| |_| |\n");
+    printf("| |__| (_| | |  \\__ \\  __/ (__  ___) | |_| |\n");
+    printf(" \\____\\__,_|_|  |___/\\___|\\___||____/ \\___/\n");
+    printf("CarsonSH 0.1 - Oh-My-Shell inspired mode\n");
+    printf("Type 'help' for CarsonSH commands.\n");
+    if (use_color()) printf(RESET);
+}
+
+static void print_git_branch(void) {
+    FILE *fp = popen("git rev-parse --abbrev-ref HEAD 2>/dev/null", "r");
+    if (!fp) return;
+    char branch[128];
+    if (fgets(branch, sizeof(branch), fp)) {
+        branch[strcspn(branch, "\r\n")] = '\0';
+        if (*branch) {
+            if (use_color()) printf(CYAN);
+            printf(" (%s)", branch);
+            if (use_color()) printf(RESET);
+        }
+    }
+    pclose(fp);
 }
 
 static int split_args(char *line, char *argv[], size_t max_args) {
@@ -88,11 +159,24 @@ static int run_external(char *argv[]) {
     return 1;
 }
 
+static void print_help(void) {
+    puts("CarsonSH built-ins:");
+    puts("  cd [DIR]          Change directory");
+    puts("  pwd               Print current directory");
+    puts("  echo [TEXT]       Print text");
+    puts("  alias [N=VALUE]   List or define an alias");
+    puts("  unalias NAME      Remove an alias");
+    puts("  help              Show this help");
+    puts("  exit [STATUS]     Exit CarsonSH");
+}
+
 int main(void) {
     char input[INPUT_SIZE];
+    char expanded_input[INPUT_SIZE];
     char *argv[MAX_ARGS];
     int last_status = 0;
 
+    load_config();
     print_banner();
 
     while (1) {
@@ -100,7 +184,11 @@ int main(void) {
         if (!getcwd(cwd, sizeof(cwd))) snprintf(cwd, sizeof(cwd), "?");
 
         if (use_color()) printf(GREEN);
-        printf("┌──(carson㉿carsonsh)-[%s]\n", cwd);
+        printf("┌──(carson㉿carsonsh)-[%s]", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        putchar('\n');
+        if (use_color()) printf(GREEN);
         printf("└─$ ");
         if (use_color()) printf(RESET);
         fflush(stdout);
@@ -112,8 +200,61 @@ int main(void) {
         int argc = split_args(line, argv, MAX_ARGS);
         if (argc == 0) continue;
 
+        const char *alias = find_alias(argv[0]);
+        if (alias) {
+            snprintf(expanded_input, sizeof(expanded_input), "%s", alias);
+            for (int i = 1; i < argc; i++) {
+                size_t used = strlen(expanded_input);
+                if (used + 1 + strlen(argv[i]) + 1 >= sizeof(expanded_input)) break;
+                snprintf(expanded_input + used, sizeof(expanded_input) - used, " %s", argv[i]);
+            }
+            argc = split_args(expanded_input, argv, MAX_ARGS);
+        }
+
         if (strcmp(argv[0], "exit") == 0)
             return argc > 1 ? atoi(argv[1]) : last_status;
+
+        if (strcmp(argv[0], "help") == 0) {
+            print_help();
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "alias") == 0) {
+            if (argc == 1) {
+                for (size_t i = 0; i < alias_count; i++)
+                    printf("alias %s='%s'\n", aliases[i].name, aliases[i].value);
+                last_status = 0;
+                continue;
+            }
+            char *eq = strchr(argv[1], '=');
+            if (!eq) {
+                fprintf(stderr, "carsonsh: alias: use NAME=VALUE\n");
+                last_status = 1;
+                continue;
+            }
+            *eq = '\0';
+            last_status = set_alias(argv[1], eq + 1);
+            continue;
+        }
+
+        if (strcmp(argv[0], "unalias") == 0) {
+            if (argc != 2) {
+                fprintf(stderr, "carsonsh: unalias: usage: unalias NAME\n");
+                last_status = 1;
+                continue;
+            }
+            int found = 0;
+            for (size_t i = 0; i < alias_count; i++) {
+                if (strcmp(aliases[i].name, argv[1]) == 0) {
+                    aliases[i] = aliases[--alias_count];
+                    found = 1;
+                    break;
+                }
+            }
+            last_status = found ? 0 : 1;
+            continue;
+        }
 
         if (strcmp(argv[0], "cd") == 0) {
             char expanded[PATH_MAX];
