@@ -1,4 +1,4 @@
-name: Build and Release Debian Package
+name: Build and Release CarsonSH
 
 on:
   push:
@@ -12,212 +12,62 @@ permissions:
 jobs:
   release-deb:
     runs-on: ubuntu-latest
-
     steps:
       - name: Check out source
         uses: actions/checkout@v4
-
       - name: Set package version
         run: echo "VERSION=0.1.${GITHUB_RUN_NUMBER}" >> "$GITHUB_ENV"
-
       - name: Build CarsonSH
         run: |
           chmod +x build.sh
           ./build.sh
-
       - name: Build Debian package
         run: |
           PKG="carsonsh_${VERSION}_amd64"
-          mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin"
-          mkdir -p "$PKG/usr/share/fonts/truetype/carsonsh"
-          mkdir -p "$PKG/usr/share/doc/carsonsh"
-          mkdir -p "$PKG/usr/share/carsonsh/framework/themes"
-          mkdir -p "$PKG/usr/share/carsonsh/framework/plugins"
-
+          mkdir -p "$PKG/DEBIAN" "$PKG/usr/bin" "$PKG/usr/share/fonts/truetype/carsonsh"
+          mkdir -p "$PKG/usr/share/doc/carsonsh" "$PKG/usr/share/carsonsh/framework/themes" "$PKG/usr/share/carsonsh/framework/plugins"
           cp build/carsonsh "$PKG/usr/bin/carsonsh"
           chmod 755 "$PKG/usr/bin/carsonsh"
-
           curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UbuntuCondensed-Regular.ttf" -o "$PKG/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
-
           curl -fsSL "https://raw.githubusercontent.com/google/fonts/main/ufl/ubuntucondensed/UFL.txt" -o "$PKG/usr/share/doc/carsonsh/UbuntuCondensed-LICENSE.txt"
-
           cp framework/themes/*.conf "$PKG/usr/share/carsonsh/framework/themes/"
           cp framework/plugins/*.conf "$PKG/usr/share/carsonsh/framework/plugins/"
-
           cat > "$PKG/usr/bin/carsonsh-font" <<'EOF'
           #!/bin/sh
           set -eu
           FONT="/usr/share/fonts/truetype/carsonsh/UbuntuCondensed-Regular.ttf"
-
           if [ -f "$FONT" ]; then
-              echo "Ubuntu Condensed is installed:"
-              echo "  $FONT"
-              echo
-              echo "Set your terminal emulator's font to: Ubuntu Condensed"
+              echo "Ubuntu Condensed is installed: $FONT"
+              echo "Choose Ubuntu Condensed in your terminal emulator's font settings."
           else
               echo "CarsonSH: Ubuntu Condensed is not installed." >&2
               exit 1
           fi
           EOF
           chmod 755 "$PKG/usr/bin/carsonsh-font"
-
           cat > "$PKG/usr/bin/carsonsh-framework" <<'EOF'
           #!/bin/sh
           set -eu
-
           FRAMEWORK="/usr/share/carsonsh/framework"
           CONFIG="${HOME}/.config/carsonsh"
           THEMES="${CONFIG}/themes"
           PLUGINS="${CONFIG}/plugins"
-
-          usage() {
-              echo "CarsonSH Framework"
-              echo
-              echo "Usage:"
-              echo "  carsonsh-framework select-theme NAME"
-              echo "  carsonsh-framework install theme NAME"
-              echo "  carsonsh-framework install plugin NAME"
-              echo "  carsonsh-framework list themes"
-              echo "  carsonsh-framework list plugins"
-              echo "  carsonsh-framework update"
-              echo
-              echo "Shortcuts:"
-              echo "  carsonsh-framework theme NAME    Install a theme"
-              echo "  carsonsh-framework plugin NAME   Install a plugin"
-              echo "  carsonsh-framework themes        List themes"
-              echo "  carsonsh-framework plugins       List plugins"
+          usage() { echo "Usage: carsonsh-framework {select-theme NAME|install theme|plugin NAME|list themes|plugins|update}"; }
+          install_component() {
+            kind="$1"; name="$2"; src="$FRAMEWORK/$kind/$name.conf"
+            [ -f "$src" ] || { echo "Component not found: $name" >&2; exit 1; }
+            if [ "$kind" = themes ]; then mkdir -p "$THEMES"; cp "$src" "$THEMES/"; else mkdir -p "$PLUGINS"; cp "$src" "$PLUGINS/"; fi
+            echo "Installed $kind component: $name"
           }
-
-          install_theme() {
-              NAME="$1"
-              SRC="$FRAMEWORK/themes/${NAME}.conf"
-              mkdir -p "$THEMES"
-              if [ ! -f "$SRC" ]; then
-                  echo "carsonsh-framework: theme not found: $NAME" >&2
-                  exit 1
-              fi
-              cp "$SRC" "$THEMES/${NAME}.conf"
-              echo "Installed CarsonSH theme: $NAME"
-          }
-
-          install_plugin() {
-              NAME="$1"
-              SRC="$FRAMEWORK/plugins/${NAME}.conf"
-              mkdir -p "$PLUGINS"
-              if [ ! -f "$SRC" ]; then
-                  echo "carsonsh-framework: plugin not found: $NAME" >&2
-                  exit 1
-              fi
-              cp "$SRC" "$PLUGINS/${NAME}.conf"
-              echo "Installed CarsonSH plugin: $NAME"
-          }
-
-          list_components() {
-              DIR="$FRAMEWORK/$1"
-              if [ ! -d "$DIR" ]; then
-                  echo "No framework components available."
-                  exit 0
-              fi
-              find "$DIR" -maxdepth 1 -type f -name '*.conf' -printf '%f\n' |
-                  sed 's/\.conf$//' |
-                  sort
-          }
-
-          update_components() {
-              mkdir -p "$THEMES" "$PLUGINS"
-              cp "$FRAMEWORK/themes/"*.conf "$THEMES/" 2>/dev/null || true
-              cp "$FRAMEWORK/plugins/"*.conf "$PLUGINS/" 2>/dev/null || true
-              echo "CarsonSH Framework components updated from the installed package."
-          }
-
-          if [ "$#" -eq 0 ]; then
-              usage
-              exit 0
-          fi
-
-          select_theme() {
-              NAME="$1"
-              SRC="$FRAMEWORK/themes/${NAME}.conf"
-              CONFIG_FILE="${CONFIG}/config"
-              mkdir -p "$CONFIG" "$THEMES"
-              if [ ! -f "$THEMES/${NAME}.conf" ]; then
-                  if [ -f "$SRC" ]; then
-                      cp "$SRC" "$THEMES/${NAME}.conf"
-                  else
-                      echo "carsonsh-framework: theme not found: $NAME" >&2
-                      exit 1
-                  fi
-              fi
-              TMP="${CONFIG_FILE}.tmp"
-              if [ -f "$CONFIG_FILE" ]; then
-                  grep -v '^[[:space:]]*theme[[:space:]]' "$CONFIG_FILE" > "$TMP" || true
-              else
-                  : > "$TMP"
-              fi
-              printf 'theme %s\n' "$NAME" >> "$TMP"
-              mv "$TMP" "$CONFIG_FILE"
-              echo "CarsonSH theme selected: $NAME"
-              echo "Run 'reload' in CarsonSH to apply it."
-          }
-
-          case "$1" in
-              select-theme)
-                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
-                  select_theme "$2"
-                  ;;
-              theme)
-                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
-                  install_theme "$2"
-                  ;;
-              plugin)
-                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
-                  install_plugin "$2"
-                  ;;
-              themes)
-                  if [ "$#" -ne 1 ]; then usage; exit 1; fi
-                  list_components themes
-                  ;;
-              plugins)
-                  if [ "$#" -ne 1 ]; then usage; exit 1; fi
-                  list_components plugins
-                  ;;
-              install)
-                  if [ "$#" -ne 3 ]; then usage; exit 1; fi
-                  case "$2" in
-                      theme) install_theme "$3" ;;
-                      plugin) install_plugin "$3" ;;
-                      *) usage; exit 1 ;;
-                  esac
-                  ;;
-              list)
-                  if [ "$#" -ne 2 ]; then usage; exit 1; fi
-                  case "$2" in
-                      themes) list_components themes ;;
-                      plugins) list_components plugins ;;
-                      *) usage; exit 1 ;;
-                  esac
-                  ;;
-              update)
-                  update_components
-                  ;;
-              *)
-                  usage
-                  exit 1
-                  ;;
+          case "${1:-}" in
+            select-theme) [ "$#" -eq 2 ] || { usage; exit 1; }; mkdir -p "$CONFIG"; printf 'theme %s\n' "$2" >> "$CONFIG/config"; install_component themes "$2" ;;
+            install) [ "$#" -eq 3 ] || { usage; exit 1; }; case "$2" in theme) install_component themes "$3" ;; plugin) install_component plugins "$3" ;; *) usage; exit 1 ;; esac ;;
+            list) [ "$#" -eq 2 ] || { usage; exit 1; }; case "$2" in themes) find "$FRAMEWORK/themes" -maxdepth 1 -name '*.conf' -printf '%f\n' | sed 's/\.conf$//' ;; plugins) find "$FRAMEWORK/plugins" -maxdepth 1 -name '*.conf' -printf '%f\n' | sed 's/\.conf$//' ;; *) usage; exit 1 ;; esac ;;
+            update) mkdir -p "$THEMES" "$PLUGINS"; cp "$FRAMEWORK/themes/"*.conf "$THEMES/"; cp "$FRAMEWORK/plugins/"*.conf "$PLUGINS/"; echo "Framework updated." ;;
+            *) usage; exit 1 ;;
           esac
           EOF
           chmod 755 "$PKG/usr/bin/carsonsh-framework"
-
-          cat > "$PKG/DEBIAN/postinst" <<'EOF'
-          #!/bin/sh
-          set -e
-          if command -v fc-cache >/dev/null 2>&1; then
-              fc-cache -f >/dev/null 2>&1 || true
-          fi
-          exit 0
-          EOF
-          chmod 755 "$PKG/DEBIAN/postinst"
-
           cat > "$PKG/DEBIAN/control" <<EOF
           Package: carsonsh
           Version: ${VERSION}
@@ -227,14 +77,52 @@ jobs:
           Maintainer: Carson <carjam120443-netizen>
           Depends: fontconfig
           Description: CarsonSH Unix shell and framework
-           A small experimental Unix shell written in C with Ubuntu Condensed font support and a native theme/plugin framework.
+           Experimental C shell with prompt fallback and native themes/plugins.
           EOF
-
           dpkg-deb --build "$PKG"
-
       - name: Create GitHub release
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           TAG="v${VERSION}"
           gh release create "$TAG" "carsonsh_${VERSION}_amd64.deb" --title "CarsonSH $TAG" --generate-notes
+
+  release-windows:
+    needs: release-deb
+    runs-on: windows-latest
+    steps:
+      - name: Check out source
+        uses: actions/checkout@v4
+      - name: Set up MSYS2
+        uses: msys2/setup-msys2@v2
+        with:
+          msystem: MSYS
+          update: true
+          install: gcc zip
+      - name: Build and package Windows x64
+        shell: msys2 {0}
+        run: |
+          chmod +x build.sh
+          CFLAGS='-std=c11 -Wall -Wextra -Wpedantic -O2 -static -static-libgcc' ./build.sh
+          mkdir -p carsonsh-windows-x64
+          cp build/carsonsh.exe carsonsh-windows-x64/
+          ldd build/carsonsh.exe | awk '/=> \/.*\.dll/ {print $3} /^\/.*\.dll/ {print $1}' | while read dll; do
+            [ -f "$dll" ] && cp -n "$dll" carsonsh-windows-x64/ || true
+          done
+          cat > carsonsh-windows-x64/README.txt <<'EOF'
+          CarsonSH for Windows x64
+          
+          Run carsonsh.exe from Windows Terminal or Command Prompt.
+          The included DLL files are runtime dependencies from MSYS2.
+          This is an experimental Windows build; some Unix commands and path conventions differ on Windows.
+          
+          If Unicode prompt symbols do not render correctly, set CARSONSH_ASCII=1 before launching CarsonSH.
+          EOF
+          zip -r carsonsh-windows-x64.zip carsonsh-windows-x64
+      - name: Upload Windows build to the matching release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $tag = "v0.1.$env:GITHUB_RUN_NUMBER"
+          gh release upload $tag carsonsh-windows-x64.zip --clobber
