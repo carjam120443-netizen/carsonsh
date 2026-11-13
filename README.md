@@ -120,6 +120,21 @@ Install locally:
 
 This installs to `~/.local/bin/carsonsh` by default.
 
+
+## Terminal font fallback and prompt wrapping
+
+CarsonSH cannot change or inspect the font selected by your terminal emulator. It can, however, avoid many broken-glyph situations:
+
+- The prompt uses an ASCII-safe variant when the active character locale is not UTF-8 or the terminal reports `TERM=dumb`.
+- Set `CARSONSH_ASCII=1` to force the ASCII prompt, or `CARSONSH_ASCII=0` to allow Unicode when your locale supports it.
+- Long working-directory paths are compacted using the terminal's `COLUMNS` setting (80 columns by default) to reduce awkward prompt wrapping.
+
+For best Unicode rendering, choose a font with broad Unicode coverage in your terminal emulator. CarsonSH cannot reliably detect missing glyphs in a particular font or change that font automatically.
+
+## Windows builds
+
+Every GitHub Actions release now also publishes `carsonsh-windows-x64.zip` alongside the Debian package. The Windows archive includes the MSYS2 runtime DLL dependencies needed by this experimental build. Extract the ZIP and run `carsonsh.exe` from Windows Terminal or Command Prompt.
+
 ## Debian package
 
 GitHub Actions automatically builds a Debian package on pushes to `main`. Releases include CarsonSH, the Ubuntu Condensed font support, and the bundled CarsonSH Framework components.
