@@ -258,6 +258,7 @@ jobs:
         run: |
           chmod +x build.sh
           CFLAGS='-std=c11 -Wall -Wextra -Wpedantic -O2 -static -static-libgcc' ./build.sh
+          if [ -f build/carsonsh ] && [ ! -f build/carsonsh.exe ]; then mv build/carsonsh build/carsonsh.exe; fi
           mkdir -p carsonsh-windows-x64
           cp build/carsonsh.exe carsonsh-windows-x64/
           ldd build/carsonsh.exe | awk '/=> \/.*\.dll/ {print $3} /^\/.*\.dll/ {print $1}' | while read dll; do
