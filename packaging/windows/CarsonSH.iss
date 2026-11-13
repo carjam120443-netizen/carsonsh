@@ -41,8 +41,8 @@ Source: "..\..\framework\plugins\*.conf"; DestDir: "{%USERPROFILE}\.config\carso
 Source: "..\..\others\examples\COMMAND-CHEATSHEET.md"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"
-Name: "{autodesktop}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"; Tasks: desktopicon
+Name: "{autoprograms}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\carsonsh.ico"; Tasks: startmenuicon
+Name: "{autodesktop}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"; IconFilename: "{app}\carsonsh.ico"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\carsonsh.cmd"; Description: "Launch CarsonSH"; Flags: postinstall nowait skipifsilent
