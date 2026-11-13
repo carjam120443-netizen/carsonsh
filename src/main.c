@@ -2,6 +2,8 @@
 #include <ctype.h>
 #include <errno.h>
 #include <limits.h>
+#include <locale.h>
+#include <langinfo.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -39,6 +41,69 @@ static void load_framework_theme(const char *name);
 
 static int use_color(void) {
     return isatty(STDOUT_FILENO);
+}
+
+/*
+ * A shell cannot inspect the font selected by the terminal emulator.
+ * Use locale/terminal hints to avoid emitting glyphs that are unlikely to
+ * render, and allow an explicit user override with CARSONSH_ASCII=1.
+ */
+static int use_unicode_prompt(void) {
+    const char *force_ascii = getenv("CARSONSH_ASCII");
+    const char *term = getenv("TERM");
+    const char *codeset;
+
+    if (force_ascii && *force_ascii && strcmp(force_ascii, "0") != 0)
+        return 0;
+    if (term && strcmp(term, "dumb") == 0)
+        return 0;
+
+    (void)setlocale(LC_CTYPE, "");
+    codeset = nl_langinfo(CODESET);
+    if (!codeset || (!strstr(codeset, "UTF-8") && !strstr(codeset, "utf8") &&
+                     !strstr(codeset, "UTF8")))
+        return 0;
+    return 1;
+}
+
+static size_t prompt_columns(void) {
+    const char *value = getenv("COLUMNS");
+    char *end = NULL;
+    unsigned long columns;
+
+    if (!value || !*value) return 80;
+    columns = strtoul(value, &end, 10);
+    if (!end || *end != '\0' || columns < 20) return 80;
+    return columns > 1000 ? 1000 : (size_t)columns;
+}
+
+/* Keep very long working directories from forcing an awkward prompt wrap. */
+static void compact_prompt_path(const char *path, char *out, size_t out_size) {
+    size_t limit = prompt_columns() > 24 ? prompt_columns() - 20 : 4;
+    size_t length = strlen(path);
+    const char *marker = use_unicode_prompt() ? "…" : "...";
+    size_t marker_len = strlen(marker);
+
+    if (length <= limit || out_size == 0) {
+        snprintf(out, out_size, "%s", path);
+        return;
+    }
+    if (limit <= marker_len + 2) {
+        snprintf(out, out_size, "%s", marker);
+        return;
+    }
+    {
+        size_t tail = (limit - marker_len) / 2;
+        size_t head = limit - marker_len - tail;
+        if (head + marker_len + tail + 1 > out_size) {
+            snprintf(out, out_size, "%s", path);
+            return;
+        }
+        memcpy(out, path, head);
+        memcpy(out + head, marker, marker_len);
+        memcpy(out + head + marker_len, path + length - tail, tail);
+        out[head + marker_len + tail] = '\0';
+    }
 }
 
 static char *trim(char *s) {
@@ -348,13 +413,18 @@ int main(void) {
         char cwd[PATH_MAX];
         if (!getcwd(cwd, sizeof(cwd))) snprintf(cwd, sizeof(cwd), "?");
 
+        char display_cwd[PATH_MAX];
+        compact_prompt_path(cwd, display_cwd, sizeof(display_cwd));
         if (use_color()) printf(GREEN);
-        printf("┌──(carson㉿carsonsh)-[%s]", cwd);
+        if (use_unicode_prompt())
+            printf("┌──(carson㉿carsonsh)-[%s]", display_cwd);
+        else
+            printf("+--(carson@carsonsh)-[%s]", display_cwd);
         if (use_color()) printf(RESET);
         print_git_branch();
         putchar('\n');
         if (use_color()) printf(GREEN);
-        printf("└─$ ");
+        printf(use_unicode_prompt() ? "└─$ " : "+-$ ");
         if (use_color()) printf(RESET);
         fflush(stdout);
 
