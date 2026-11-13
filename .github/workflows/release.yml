@@ -251,7 +251,7 @@ jobs:
         with:
           msystem: MSYS
           update: true
-          install: gcc zip
+          install: gcc zip mingw-w64-x86_64-librsvg mingw-w64-x86_64-python-pillow
 
       - name: Build CarsonSH and stage Windows packages
         shell: msys2 {0}
@@ -269,6 +269,16 @@ jobs:
           done
           cp packaging/windows/carsonsh.cmd dist/installer/
           cp others/examples/COMMAND-CHEATSHEET.md dist/installer/COMMAND-CHEATSHEET.md
+          rsvg-convert -w 256 -h 148 assets/carsonsh-terminal.svg -o dist/installer/carsonsh.png
+          python - <<'PY'
+          from PIL import Image
+          logo = Image.open("dist/installer/carsonsh.png").convert("RGBA")
+          canvas = Image.new("RGBA", (256, 256), (8, 11, 10, 255))
+          logo.thumbnail((256, 148), Image.Resampling.LANCZOS)
+          canvas.alpha_composite(logo, ((256 - logo.width) // 2, (256 - logo.height) // 2))
+          canvas.save("dist/installer/carsonsh.ico", format="ICO", sizes=[(16, 16), (32, 32), (48, 48), (64, 64), (128, 128), (256, 256)])
+          PY
+          rm dist/installer/carsonsh.png
 
           cp -a dist/installer/. dist/portable/
           cp packaging/windows/CarsonSH-Portable.cmd dist/portable/
