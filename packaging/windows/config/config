@@ -1,0 +1,8 @@
+# CarsonSH Windows starter configuration
+# Stored at %HOME%/.config/carsonsh/config
+
+welcome on
+theme carson-green
+plugin git
+plugin linux
+plugin shortcuts
