@@ -51,6 +51,7 @@ Beginner-friendly example scripts are available in [`others/examples/`](others/e
 
 - [`example.sh`](others/examples/example.sh) — a POSIX shell script showing commands such as `pwd`, `echo`, `date`, `uname`, and `ls`.
 - [`example.ps1`](others/examples/example.ps1) — a PowerShell script showing `Get-Location`, `Write-Output`, `Get-Date`, `Get-CimInstance`, and `Get-ChildItem`.
+- [`COMMAND-CHEATSHEET.md`](others/examples/COMMAND-CHEATSHEET.md) — a beginner-friendly reference for CarsonSH built-ins, aliases, history, themes, plugins, and external commands.
 
 Run the examples from the repository's root directory while CarsonSH is open:
 
@@ -112,7 +113,10 @@ alias ll=eza -la
 alias la=eza -a
 alias cls=clear
 alias reload=reload
+welcome on
 ```
+
+CarsonSH prints `welcome to carsonsh` at startup by default, regardless of the selected theme. To hide the startup line, add `welcome off` to this config. Use `welcome on` to show it again. Invalid values produce a config warning and do not stop startup or prevent later config lines from loading.
 
 You can also create an alias during a session:
 
