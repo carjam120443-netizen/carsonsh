@@ -10,7 +10,6 @@
 #include <time.h>
 #include <sys/wait.h>
 #include <unistd.h>
-#include "builtins.h"
 
 #define MAX_ARGS 128
 #define INPUT_SIZE 4096
