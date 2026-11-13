@@ -27,20 +27,20 @@ CloseApplications=no
 Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
 
 [Dirs]
-Name: "{userprofile}\.config\carsonsh"; Flags: uninsneveruninstall
-Name: "{userprofile}\.config\carsonsh\themes"; Flags: uninsneveruninstall
-Name: "{userprofile}\.config\carsonsh\plugins"; Flags: uninsneveruninstall
+Name: "{%USERPROFILE}\.config\carsonsh"; Flags: uninsneveruninstall
+Name: "{%USERPROFILE}\.config\carsonsh\themes"; Flags: uninsneveruninstall
+Name: "{%USERPROFILE}\.config\carsonsh\plugins"; Flags: uninsneveruninstall
 
 [Files]
 Source: "..\..\dist\installer\*"; DestDir: "{app}"; Flags: ignoreversion recursesubdirs createallsubdirs
-Source: "config\config"; DestDir: "{userprofile}\.config\carsonsh"; DestName: "config"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "..\..\framework\themes\*.conf"; DestDir: "{userprofile}\.config\carsonsh\themes"; Flags: onlyifdoesntexist uninsneveruninstall
-Source: "..\..\framework\plugins\*.conf"; DestDir: "{userprofile}\.config\carsonsh\plugins"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "config\config"; DestDir: "{%USERPROFILE}\.config\carsonsh"; DestName: "config"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "..\..\framework\themes\*.conf"; DestDir: "{%USERPROFILE}\.config\carsonsh\themes"; Flags: onlyifdoesntexist uninsneveruninstall
+Source: "..\..\framework\plugins\*.conf"; DestDir: "{%USERPROFILE}\.config\carsonsh\plugins"; Flags: onlyifdoesntexist uninsneveruninstall
 Source: "..\..\others\examples\COMMAND-CHEATSHEET.md"; DestDir: "{app}\docs"; Flags: ignoreversion
 
 [Icons]
-Name: "{autoprograms}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{userprofile}"
-Name: "{autodesktop}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{userprofile}"; Tasks: desktopicon
+Name: "{autoprograms}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"
+Name: "{autodesktop}\CarsonSH"; Filename: "{app}\carsonsh.cmd"; WorkingDir: "{%USERPROFILE}"; Tasks: desktopicon
 
 [Run]
 Filename: "{app}\carsonsh.cmd"; Description: "Launch CarsonSH"; Flags: postinstall nowait skipifsilent
