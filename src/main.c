@@ -34,6 +34,7 @@ static char loaded_plugins[MAX_FRAMEWORK_FILES][64];
 static size_t loaded_plugin_count = 0;
 static char active_theme[64] = "carson-green";
 static char prompt_style[64] = "carson-green";
+static int show_welcome = 1;
 
 /* Framework loaders are used by load_framework_file before their definitions. */
 static void load_framework_plugin(const char *name);
@@ -145,6 +146,11 @@ static void load_framework_file(const char *path) {
             load_framework_theme(trim(s + 6));
         } else if (strncmp(s, "prompt ", 7) == 0) {
             snprintf(prompt_style, sizeof(prompt_style), "%s", trim(s + 7));
+        } else if (strncmp(s, "welcome ", 8) == 0) {
+            const char *setting = trim(s + 8);
+            if (strcmp(setting, "on") == 0) show_welcome = 1;
+            else if (strcmp(setting, "off") == 0) show_welcome = 0;
+            else fprintf(stderr, "carsonsh: config: expected 'welcome on' or 'welcome off'\n");
         } else if (strncmp(s, "plugin ", 7) == 0) {
             load_framework_plugin(trim(s + 7));
         } else if (strncmp(s, "alias ", 6) == 0) {
@@ -597,6 +603,7 @@ int main(void) {
     load_config();
     load_history();
     if (getenv("CARSONSH_BANNER")) print_banner();
+    if (show_welcome) puts("welcome to carsonsh");
 
     while (1) {
         char cwd[PATH_MAX];
@@ -641,6 +648,7 @@ int main(void) {
             loaded_plugin_count = 0;
             snprintf(active_theme, sizeof(active_theme), "%s", "carson-green");
             snprintf(prompt_style, sizeof(prompt_style), "%s", "carson-green");
+            show_welcome = 1;
             load_config();
             puts("CarsonSH configuration reloaded.");
             last_status = 0;
