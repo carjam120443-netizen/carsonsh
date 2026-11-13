@@ -269,8 +269,8 @@ jobs:
           done
           cp packaging/windows/carsonsh.cmd dist/installer/
           cp others/examples/COMMAND-CHEATSHEET.md dist/installer/COMMAND-CHEATSHEET.md
-          rsvg-convert -w 256 -h 148 assets/carsonsh-terminal.svg -o dist/installer/carsonsh.png
-          python - <<'PY'
+          /mingw64/bin/rsvg-convert.exe -w 256 -h 148 assets/carsonsh-terminal.svg -o dist/installer/carsonsh.png
+          /mingw64/bin/python.exe - <<'PY'
           from PIL import Image
           logo = Image.open("dist/installer/carsonsh.png").convert("RGBA")
           canvas = Image.new("RGBA", (256, 256), (8, 11, 10, 255))
