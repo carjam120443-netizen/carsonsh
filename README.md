@@ -45,6 +45,41 @@ On Linux, `cpufetch` reads the CPU model from `/proc/cpuinfo` and samples total 
 
 On Windows, the GPU and display commands query Windows' `Win32_VideoController` information through PowerShell. GPU utilization is not currently reported by the Windows implementation. Unsupported or unavailable system interfaces are reported instead of guessed.
 
+## Example scripts
+
+Beginner-friendly example scripts are available in [`others/examples/`](others/examples/):
+
+- [`example.sh`](others/examples/example.sh) — a POSIX shell script showing commands such as `pwd`, `echo`, `date`, `uname`, and `ls`.
+- [`example.ps1`](others/examples/example.ps1) — a PowerShell script showing `Get-Location`, `Write-Output`, `Get-Date`, `Get-CimInstance`, and `Get-ChildItem`.
+
+Run the examples from the repository's root directory while CarsonSH is open:
+
+**Linux / Unix-like systems:**
+
+```sh
+sh others/examples/example.sh
+```
+
+**Windows (PowerShell):**
+
+```text
+powershell.exe -NoProfile -File others/examples/example.ps1
+```
+
+These are example scripts for the external interpreters, not native CarsonSH scripts. CarsonSH can launch external programs, but native `.sh` / `.ps1` scripting, variables, pipes, and redirection are not implemented yet. You can still try CarsonSH's own built-ins directly at its prompt:
+
+```text
+help
+pwd
+echo Hello from CarsonSH
+history
+cpufetch
+gpufetch
+displayfetch
+```
+
+The `.gitignore` in `others/examples/` ignores generated logs, temporary output files, and the local `output/` directory for this examples folder only; it does not add ignore rules to `others/` itself.
+
 ## Oh-My-Shell-inspired customization
 
 CarsonSH includes a native C implementation inspired by documented ideas from KasRoudra's Oh-My-Shell project: aliases, a customized prompt, a banner, and terminal customization.
