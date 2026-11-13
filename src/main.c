@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <sys/wait.h>
 #include <unistd.h>
 #include "builtins.h"
@@ -384,6 +385,166 @@ static int run_external(char *argv[]) {
     return 1;
 }
 
+
+static void print_section(const char *title) {
+    printf("\n%s\n", title);
+    for (size_t i = 0; i < strlen(title); i++) putchar('-');
+    putchar('\n');
+}
+
+static void cpu_model(char *out, size_t size) {
+    FILE *fp = fopen("/proc/cpuinfo", "r");
+    char line[512];
+    snprintf(out, size, "Unknown CPU");
+    if (!fp) return;
+    while (fgets(line, sizeof(line), fp)) {
+        if (strncmp(line, "model name", 10) == 0 ||
+            strncmp(line, "Hardware", 8) == 0) {
+            char *colon = strchr(line, ':');
+            if (colon) {
+                snprintf(out, size, "%s", trim(colon + 1));
+                out[strcspn(out, "\r\n")] = '\0';
+                break;
+            }
+        }
+    }
+    fclose(fp);
+}
+
+static int read_cpu_ticks(unsigned long long *idle, unsigned long long *total) {
+    FILE *fp = fopen("/proc/stat", "r");
+    unsigned long long user, nice, system, idle_ticks, iowait = 0;
+    unsigned long long irq = 0, softirq = 0, steal = 0;
+    if (!fp) return 0;
+    int count = fscanf(fp, "cpu %llu %llu %llu %llu %llu %llu %llu %llu",
+                       &user, &nice, &system, &idle_ticks, &iowait,
+                       &irq, &softirq, &steal);
+    fclose(fp);
+    if (count < 4) return 0;
+    *idle = idle_ticks + iowait;
+    *total = user + nice + system + idle_ticks + iowait + irq + softirq + steal;
+    return 1;
+}
+
+static void command_cpufetch(void) {
+    char model[256];
+    unsigned long long idle1, total1, idle2, total2;
+    cpu_model(model, sizeof(model));
+    print_section("CarsonSH CPU Fetch");
+    printf("CPU: %s\n", model);
+#if defined(__linux__)
+    long cores = sysconf(_SC_NPROCESSORS_ONLN);
+    if (cores > 0) printf("Logical CPUs: %ld\n", cores);
+    if (read_cpu_ticks(&idle1, &total1)) {
+        struct timespec delay = {0, 300000000L};
+        (void)nanosleep(&delay, NULL);
+        if (read_cpu_ticks(&idle2, &total2) && total2 > total1) {
+            double usage = 100.0 * (double)((total2 - total1) - (idle2 - idle1)) /
+                           (double)(total2 - total1);
+            if (usage < 0.0) usage = 0.0;
+            if (usage > 100.0) usage = 100.0;
+            printf("Current usage: %.1f%%\n", usage);
+        } else {
+            puts("Current usage: unavailable");
+        }
+    } else {
+        puts("Current usage: unavailable (no /proc/stat)");
+    }
+#else
+    puts("Current usage: unavailable on this platform");
+#endif
+}
+
+static void command_gpufetch(void) {
+    print_section("CarsonSH GPU Fetch");
+#if defined(_WIN32)
+    FILE *fp = popen("powershell.exe -NoProfile -Command \"Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }\"", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (*line) { printf("GPU: %s\n", line); found = 1; }
+        }
+        pclose(fp);
+        if (!found) puts("GPU: unavailable");
+    } else puts("GPU: unavailable");
+    puts("GPU utilization: not exposed by this CarsonSH build on Windows");
+#else
+    FILE *fp = popen("nvidia-smi --query-gpu=name,utilization.gpu,memory.used,memory.total --format=csv,noheader 2>/dev/null", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (*line) { printf("GPU: %s\n", line); found = 1; }
+        }
+        int status = pclose(fp);
+        if (found && status == 0) return;
+    }
+    fp = popen("lspci 2>/dev/null | grep -Ei 'VGA compatible controller|3D controller|Display controller'", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (*line) { printf("GPU: %s\n", line); found = 1; }
+        }
+        pclose(fp);
+        if (!found) puts("GPU: not detected (install/use lspci or nvidia-smi)");
+    } else puts("GPU: not detected (install/use lspci or nvidia-smi)");
+    puts("GPU utilization: unavailable without a supported vendor tool");
+#endif
+}
+
+static void command_displayfetch(void) {
+    print_section("CarsonSH Display Fetch");
+#if defined(_WIN32)
+    FILE *fp = popen("powershell.exe -NoProfile -Command \"Get-CimInstance Win32_VideoController | ForEach-Object { if ($_.CurrentHorizontalResolution -gt 0) { '{0}: {1}x{2} @ {3} Hz' -f $_.Name,$_.CurrentHorizontalResolution,$_.CurrentVerticalResolution,$_.CurrentRefreshRate } }\"", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (*line) { puts(line); found = 1; }
+        }
+        pclose(fp);
+        if (!found) puts("Display mode: unavailable");
+    } else puts("Display mode: unavailable");
+#else
+    FILE *fp = popen("xrandr --current 2>/dev/null | grep ' connected' ", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            char *mode = strchr(line, ' ');
+            if (mode) {
+                while (*mode == ' ') mode++;
+                printf("%s\n", mode);
+                found = 1;
+            }
+        }
+        pclose(fp);
+        if (found) return;
+    }
+    fp = popen("wlr-randr 2>/dev/null", "r");
+    if (fp) {
+        char line[512];
+        int found = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            if (strstr(line, "current") || strstr(line, "Enabled:")) {
+                fputs(line, stdout);
+                found = 1;
+            }
+        }
+        pclose(fp);
+        if (found) return;
+    }
+    puts("Display mode: unavailable (try xrandr or wlr-randr)");
+#endif
+}
+
 static void print_help(void) {
     puts("CarsonSH built-ins:");
     puts("  cd [DIR]          Change directory");
@@ -395,6 +556,9 @@ static void print_help(void) {
     puts("  reload            Reload CarsonSH configuration");
     puts("  theme [NAME]      Show or select a CarsonSH framework theme");
     puts("  plugin [NAME]     Show or load a CarsonSH framework plugin");
+    puts("  cpufetch          Show CPU model, logical CPUs, and current usage");
+    puts("  gpufetch          Show detected GPU and available utilization data");
+    puts("  displayfetch      Show connected display modes and refresh rates");
     puts("  help              Show this help");
     puts("  exit [STATUS]     Exit CarsonSH");
 }
@@ -573,6 +737,24 @@ int main(void) {
                 fprintf(stderr, "carsonsh: cd: %s: %s\n", expanded, strerror(errno));
                 last_status = 1;
             } else last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "cpufetch") == 0) {
+            command_cpufetch();
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "gpufetch") == 0) {
+            command_gpufetch();
+            last_status = 0;
+            continue;
+        }
+
+        if (strcmp(argv[0], "displayfetch") == 0) {
+            command_displayfetch();
+            last_status = 0;
             continue;
         }
 
