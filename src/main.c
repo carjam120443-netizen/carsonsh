@@ -146,11 +146,6 @@ static void load_framework_file(const char *path) {
             load_framework_theme(trim(s + 6));
         } else if (strncmp(s, "prompt ", 7) == 0) {
             snprintf(prompt_style, sizeof(prompt_style), "%s", trim(s + 7));
-        } else if (strncmp(s, "welcome ", 8) == 0) {
-            const char *setting = trim(s + 8);
-            if (strcmp(setting, "on") == 0) show_welcome = 1;
-            else if (strcmp(setting, "off") == 0) show_welcome = 0;
-            else fprintf(stderr, "carsonsh: config: expected 'welcome on' or 'welcome off'\n");
         } else if (strncmp(s, "plugin ", 7) == 0) {
             load_framework_plugin(trim(s + 7));
         } else if (strncmp(s, "alias ", 6) == 0) {
@@ -202,6 +197,11 @@ static void load_config(void) {
             load_framework_theme(trim(s + 6));
         } else if (strncmp(s, "prompt ", 7) == 0) {
             snprintf(prompt_style, sizeof(prompt_style), "%s", trim(s + 7));
+        } else if (strncmp(s, "welcome ", 8) == 0) {
+            const char *setting = trim(s + 8);
+            if (strcmp(setting, "on") == 0) show_welcome = 1;
+            else if (strcmp(setting, "off") == 0) show_welcome = 0;
+            else fprintf(stderr, "carsonsh: config: expected 'welcome on' or 'welcome off'\\n");
         } else if (strncmp(s, "plugin ", 7) == 0) {
             load_framework_plugin(trim(s + 7));
         } else if (strncmp(s, "alias ", 6) == 0) {
