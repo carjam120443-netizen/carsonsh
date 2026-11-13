@@ -430,7 +430,7 @@ static void command_cpufetch(void) {
     char model[256];
     unsigned long long idle1, total1, idle2, total2;
     print_section("CarsonSH CPU Fetch");
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__MSYS__) || defined(__CYGWIN__)
     FILE *fp = popen("powershell.exe -NoProfile -Command \"$cpu=Get-CimInstance Win32_Processor | Select-Object -First 1; Write-Output $cpu.Name; Write-Output $cpu.NumberOfLogicalProcessors; try { [math]::Round((Get-Counter '\\Processor(_Total)\\% Processor Time').CounterSamples[0].CookedValue,1) } catch { Write-Output 'N/A' }\"", "r");
     if (fp) {
         char line[512];
@@ -472,7 +472,7 @@ static void command_cpufetch(void) {
 
 static void command_gpufetch(void) {
     print_section("CarsonSH GPU Fetch");
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__MSYS__) || defined(__CYGWIN__)
     FILE *fp = popen("powershell.exe -NoProfile -Command \"Get-CimInstance Win32_VideoController | ForEach-Object { $_.Name }\"", "r");
     if (fp) {
         char line[512];
@@ -514,7 +514,7 @@ static void command_gpufetch(void) {
 
 static void command_displayfetch(void) {
     print_section("CarsonSH Display Fetch");
-#if defined(_WIN32)
+#if defined(_WIN32) || defined(__MSYS__) || defined(__CYGWIN__)
     FILE *fp = popen("powershell.exe -NoProfile -Command \"Get-CimInstance Win32_VideoController | ForEach-Object { if ($_.CurrentHorizontalResolution -gt 0) { '{0}: {1}x{2} @ {3} Hz' -f $_.Name,$_.CurrentHorizontalResolution,$_.CurrentVerticalResolution,$_.CurrentRefreshRate } }\"", "r");
     if (fp) {
         char line[512];
