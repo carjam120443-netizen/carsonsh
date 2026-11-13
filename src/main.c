@@ -1,5 +1,6 @@
 #define _POSIX_C_SOURCE 200809L
 #include <ctype.h>
+#include <dirent.h>
 #include <errno.h>
 #include <limits.h>
 #include <locale.h>
@@ -178,6 +179,43 @@ static void load_framework_theme(const char *name) {
     snprintf(path, sizeof(path), "%s/.config/carsonsh/themes/%s.conf", home, name);
     load_framework_file(path);
     snprintf(active_theme, sizeof(active_theme), "%s", name);
+}
+
+static void list_themes(void) {
+    const char *home = getenv("HOME");
+    if (!home) {
+        puts("carsonsh: HOME is not set; cannot locate themes.");
+        return;
+    }
+
+    char path[PATH_MAX];
+    snprintf(path, sizeof(path), "%s/.config/carsonsh/themes", home);
+    DIR *dir = opendir(path);
+    if (!dir) {
+        printf("No themes found in %s. Install framework themes first.\\n", path);
+        return;
+    }
+
+    struct dirent *entry;
+    size_t count = 0;
+    puts("Available CarsonSH themes:");
+    while ((entry = readdir(dir)) != NULL) {
+        size_t length = strlen(entry->d_name);
+        if (length <= 5 || strcmp(entry->d_name + length - 5, ".conf") != 0)
+            continue;
+
+        char name[64];
+        size_t name_length = length - 5;
+        if (name_length >= sizeof(name)) continue;
+        memcpy(name, entry->d_name, name_length);
+        name[name_length] = '\\0';
+
+        printf("  %s%s\\n", name,
+               strcmp(name, active_theme) == 0 ? " (active)" : "");
+        count++;
+    }
+    closedir(dir);
+    if (count == 0) puts("  (no .conf theme files found)");
 }
 
 static void load_config(void) {
@@ -586,6 +624,7 @@ static void print_help(void) {
     puts("  history [N]       Show recent command history");
     puts("  reload            Reload CarsonSH configuration");
     puts("  theme [NAME]      Show or select a CarsonSH framework theme");
+    puts("  theme list        List themes installed in your user config");
     puts("  plugin [NAME]     Show or load a CarsonSH framework plugin");
     puts("  cpufetch          Show CPU model, logical CPUs, and current usage");
     puts("  gpufetch          Show detected GPU and available utilization data");
@@ -657,17 +696,22 @@ int main(void) {
 
         if (strcmp(argv[0], "theme") == 0) {
             if (argc == 1) {
-                printf("Active CarsonSH theme: %s\n", active_theme);
+                printf("Active CarsonSH theme: %s\\n", active_theme);
+                last_status = 0;
+                continue;
+            }
+            if (argc == 2 && strcmp(argv[1], "list") == 0) {
+                list_themes();
                 last_status = 0;
                 continue;
             }
             if (argc != 2) {
-                fprintf(stderr, "carsonsh: theme: usage: theme [NAME]\n");
+                fprintf(stderr, "carsonsh: theme: usage: theme [NAME|list]\\n");
                 last_status = 1;
                 continue;
             }
             load_framework_theme(argv[1]);
-            printf("CarsonSH theme selected: %s\n", active_theme);
+            printf("CarsonSH theme selected: %s\\n", active_theme);
             last_status = 0;
             continue;
         }
