@@ -190,9 +190,22 @@ CarsonSH cannot change or inspect the font selected by your terminal emulator. I
 
 For best Unicode rendering, choose a font with broad Unicode coverage in your terminal emulator. CarsonSH cannot reliably detect missing glyphs in a particular font or change that font automatically.
 
-## Windows builds
+## Windows installers and portable build
 
-Every GitHub Actions release now also publishes `carsonsh-windows-x64.zip` alongside the Debian package. The Windows archive includes the MSYS2 runtime DLL dependencies needed by this experimental build. Extract the ZIP and run `carsonsh.exe` from Windows Terminal or Command Prompt.
+Every GitHub Actions release publishes two Windows x64 options alongside the Debian package:
+
+- **`CarsonSH-Setup-x64.exe`** — a normal, per-user Inno Setup installer. It does not require administrator access, and the setup wizard lets you choose the application folder on any available drive. Start CarsonSH from the Start menu or optional desktop shortcut.
+- **`carsonsh-windows-x64.zip`** — a portable package. Extract the complete folder to any drive or directory, then run `CarsonSH-Portable.cmd`. Keep the executable, DLL files, launcher, and `home` folder together.
+
+Both packages include the CarsonSH executable, required MSYS2 runtime DLLs, and the bundled framework themes and plugins.
+
+**Configuration and data locations:**
+
+- The normal installer stores user settings in `%USERPROFILE%\\.config\\carsonsh` (the Windows equivalent of `~/.config/carsonsh`). It installs the starter config and framework components without overwriting files that already exist.
+- The portable build stores its HOME directory inside the extracted folder at `home\\`. Its config, themes, plugins, and command history travel with the portable folder, so it can be moved between drives.
+- The included `carsonsh.cmd` launcher uses your Windows user profile. The portable launcher sets HOME to its own `home` directory.
+
+The installer changes only the current user's CarsonSH files; it does not write to Program Files or require system-wide installation. This Windows build is experimental and bundles the MSYS2 runtime needed by the current C implementation.
 
 ## Debian package
 
