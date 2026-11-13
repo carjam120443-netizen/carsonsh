@@ -15,7 +15,8 @@ DisableProgramGroupPage=yes
 PrivilegesRequired=lowest
 ArchitecturesAllowed=x64
 ArchitecturesInstallIn64BitMode=x64
-UninstallDisplayIcon={app}\carsonsh.exe
+SetupIconFile=..\..\dist\installer\carsonsh.ico
+UninstallDisplayIcon={app}\carsonsh.ico
 OutputDir=..\..\dist
 OutputBaseFilename=CarsonSH-Setup-x64
 Compression=lzma2
@@ -24,7 +25,8 @@ WizardStyle=modern
 CloseApplications=no
 
 [Tasks]
-Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Additional shortcuts:"
+Name: "startmenuicon"; Description: "Create a Start Menu shortcut"; GroupDescription: "Shortcuts:"; Flags: checkedonce
+Name: "desktopicon"; Description: "Create a desktop shortcut"; GroupDescription: "Shortcuts:"; Flags: unchecked
 
 [Dirs]
 Name: "{%USERPROFILE}\.config\carsonsh"; Flags: uninsneveruninstall
