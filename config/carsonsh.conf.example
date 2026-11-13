@@ -14,5 +14,9 @@ alias reload=reload
 # alias updt=sudo apt update
 # alias inst=sudo apt install
 
+# Startup message: show 'welcome to carsonsh' by default.
+# Set to 'off' to hide it; set to 'on' to show it again.
+welcome on
+
 # CarsonSH history is stored in ~/.carsonsh_history.
 # The built-in history command shows the 20 most recent entries by default.
