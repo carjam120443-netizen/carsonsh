@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="520" viewBox="0 0 900 520" role="img" aria-labelledby="title desc">
+  <title id="title">CarsonSH terminal logo</title>
+  <desc id="desc">A dark terminal window with a few lines of green code and the CarsonSH name in bright green.</desc>
+  <defs>
+    <linearGradient id="screen" x1="0" y1="0" x2="0" y2="1">
+      <stop offset="0" stop-color="#111a16"/>
+      <stop offset="1" stop-color="#080d0b"/>
+    </linearGradient>
+    <filter id="glow" x="-30%" y="-30%" width="160%" height="160%">
+      <feGaussianBlur stdDeviation="5" result="blur"/>
+      <feMerge><feMergeNode in="blur"/><feMergeNode in="SourceGraphic"/></feMerge>
+    </filter>
+  </defs>
+  <rect x="42" y="32" width="816" height="456" rx="26" fill="#080b0a" stroke="#273b30" stroke-width="5"/>
+  <path d="M68 32h764a26 26 0 0 1 26 26v42H42V58a26 26 0 0 1 26-26z" fill="#202a24"/>
+  <circle cx="78" cy="70" r="9" fill="#ff6b63"/>
+  <circle cx="111" cy="70" r="9" fill="#f5c451"/>
+  <circle cx="144" cy="70" r="9" fill="#55c878"/>
+  <text x="450" y="77" text-anchor="middle" fill="#a7b6aa" font-family="monospace" font-size="19">carsonsh — terminal</text>
+  <rect x="68" y="120" width="764" height="342" rx="8" fill="url(#screen)"/>
+  <g font-family="monospace" font-size="20" fill="#4ade80" opacity=".82">
+    <text x="100" y="164">$ carsonsh</text>
+    <text x="100" y="198">[carsonsh] starting shell...</text>
+    <text x="100" y="232">carson@carsonsh:~$ uname -s</text>
+    <text x="100" y="266">Linux</text>
+    <text x="100" y="300">carson@carsonsh:~$ _</text>
+  </g>
+  <text x="450" y="398" text-anchor="middle" font-family="monospace" font-size="76" font-weight="700" letter-spacing="2" fill="#39f477" filter="url(#glow)">CarsonSH</text>
+  <path d="M278 423h344" stroke="#39f477" stroke-width="3" opacity=".8"/>
+</svg>
