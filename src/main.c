@@ -429,10 +429,27 @@ static int read_cpu_ticks(unsigned long long *idle, unsigned long long *total) {
 static void command_cpufetch(void) {
     char model[256];
     unsigned long long idle1, total1, idle2, total2;
-    cpu_model(model, sizeof(model));
     print_section("CarsonSH CPU Fetch");
+#if defined(_WIN32)
+    FILE *fp = popen("powershell.exe -NoProfile -Command \"$cpu=Get-CimInstance Win32_Processor | Select-Object -First 1; Write-Output $cpu.Name; Write-Output $cpu.NumberOfLogicalProcessors; try { [math]::Round((Get-Counter '\\Processor(_Total)\\% Processor Time').CounterSamples[0].CookedValue,1) } catch { Write-Output 'N/A' }\"", "r");
+    if (fp) {
+        char line[512];
+        int row = 0;
+        while (fgets(line, sizeof(line), fp)) {
+            line[strcspn(line, "\r\n")] = '\0';
+            if (!*line) continue;
+            if (row == 0) printf("CPU: %s\n", line);
+            else if (row == 1) printf("Logical CPUs: %s\n", line);
+            else if (row == 2) printf("Current usage: %s%s\n", line,
+                                      strcmp(line, "N/A") == 0 ? "" : "%");
+            row++;
+        }
+        pclose(fp);
+        if (row == 0) puts("CPU information: unavailable");
+    } else puts("CPU information: unavailable");
+#elif defined(__linux__)
+    cpu_model(model, sizeof(model));
     printf("CPU: %s\n", model);
-#if defined(__linux__)
     long cores = sysconf(_SC_NPROCESSORS_ONLN);
     if (cores > 0) printf("Logical CPUs: %ld\n", cores);
     if (read_cpu_ticks(&idle1, &total1)) {
@@ -444,13 +461,11 @@ static void command_cpufetch(void) {
             if (usage < 0.0) usage = 0.0;
             if (usage > 100.0) usage = 100.0;
             printf("Current usage: %.1f%%\n", usage);
-        } else {
-            puts("Current usage: unavailable");
-        }
-    } else {
-        puts("Current usage: unavailable (no /proc/stat)");
-    }
+        } else puts("Current usage: unavailable");
+    } else puts("Current usage: unavailable (no /proc/stat)");
 #else
+    cpu_model(model, sizeof(model));
+    printf("CPU: %s\n", model);
     puts("Current usage: unavailable on this platform");
 #endif
 }
