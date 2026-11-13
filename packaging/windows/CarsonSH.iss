@@ -3,7 +3,7 @@
 #endif
 
 [Setup]
-AppId={{A9F8B6E2-62E8-4E3D-91D2-CARSONSH0001}
+AppId={{A9F8B6E2-62E8-4E3D-91D2-CA25005A0001}
 AppName=CarsonSH
 AppVersion={#AppVersion}
 AppPublisher=Carson
