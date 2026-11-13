@@ -194,10 +194,10 @@ For best Unicode rendering, choose a font with broad Unicode coverage in your te
 
 Every GitHub Actions release publishes two Windows x64 options alongside the Debian package:
 
-- **`CarsonSH-Setup-x64.exe`** — a normal, per-user Inno Setup installer. It does not require administrator access, and the setup wizard lets you choose the application folder on any available drive. Start CarsonSH from the Start menu or optional desktop shortcut.
+- **`CarsonSH-Setup-x64.exe`** — a normal, per-user Inno Setup installer. It does not require administrator access, and the setup wizard lets you choose the application folder on any available drive. The setup wizard lets you choose whether to create a Start Menu shortcut and/or a desktop shortcut. Both use the CarsonSH terminal logo from `assets/carsonsh-terminal.svg` as their app icon.
 - **`carsonsh-windows-x64.zip`** — a portable package. Extract the complete folder to any drive or directory, then run `CarsonSH-Portable.cmd`. Keep the executable, DLL files, launcher, and `home` folder together.
 
-Both packages include the CarsonSH executable, required MSYS2 runtime DLLs, and the bundled framework themes and plugins.
+Both packages include the CarsonSH executable, required MSYS2 runtime DLLs, the bundled framework themes and plugins, and the CarsonSH app icon generated from the repository's terminal logo.
 
 **Configuration and data locations:**
 
