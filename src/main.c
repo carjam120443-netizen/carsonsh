@@ -144,6 +144,8 @@ static void load_framework_file(const char *path) {
         if (*s == '\0' || *s == '#') continue;
         if (strncmp(s, "theme ", 6) == 0) {
             load_framework_theme(trim(s + 6));
+        } else if (strncmp(s, "prompt ", 7) == 0) {
+            snprintf(prompt_style, sizeof(prompt_style), "%s", trim(s + 7));
         } else if (strncmp(s, "plugin ", 7) == 0) {
             load_framework_plugin(trim(s + 7));
         } else if (strncmp(s, "alias ", 6) == 0) {
@@ -193,6 +195,8 @@ static void load_config(void) {
         if (*s == '\0' || *s == '#') continue;
         if (strncmp(s, "theme ", 6) == 0) {
             load_framework_theme(trim(s + 6));
+        } else if (strncmp(s, "prompt ", 7) == 0) {
+            snprintf(prompt_style, sizeof(prompt_style), "%s", trim(s + 7));
         } else if (strncmp(s, "plugin ", 7) == 0) {
             load_framework_plugin(trim(s + 7));
         } else if (strncmp(s, "alias ", 6) == 0) {
@@ -332,7 +336,14 @@ static void print_prompt(const char *cwd) {
         printf("╰─❯ ");
         if (use_color()) printf(RESET);
     } else {
-        print_prompt(cwd);
+        if (use_color()) printf(GREEN);
+        printf("┌──(carson㉿carsonsh)-[%s]", cwd);
+        if (use_color()) printf(RESET);
+        print_git_branch();
+        putchar('\n');
+        if (use_color()) printf(GREEN);
+        printf(use_unicode_prompt() ? "└─$ " : "+-$ ");
+        if (use_color()) printf(RESET);
     }
 }
 
@@ -594,17 +605,7 @@ int main(void) {
 
         char display_cwd[PATH_MAX];
         compact_prompt_path(cwd, display_cwd, sizeof(display_cwd));
-        if (use_color()) printf(GREEN);
-        if (use_unicode_prompt())
-            printf("┌──(carson㉿carsonsh)-[%s]", display_cwd);
-        else
-            printf("+--(carson@carsonsh)-[%s]", display_cwd);
-        if (use_color()) printf(RESET);
-        print_git_branch();
-        putchar('\n');
-        if (use_color()) printf(GREEN);
-        printf(use_unicode_prompt() ? "└─$ " : "+-$ ");
-        if (use_color()) printf(RESET);
+        print_prompt(display_cwd);
         fflush(stdout);
 
         if (!fgets(input, sizeof(input), stdin)) { putchar('\n'); break; }
