@@ -24,7 +24,7 @@ The goal is to build a real shell from the ground up instead of wrapping an exis
 - Built-in `history` with persistent history storage
 - Built-in `reload` for reloading configuration
 - Built-in `help`
-- Built-in `theme` and `plugin` framework commands
+- Built-in `theme` (including `theme list`) and `plugin` framework commands
 - External command execution through `PATH`
 - Basic command arguments
 - User configuration at `~/.config/carsonsh/config`
