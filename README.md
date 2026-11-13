@@ -13,6 +13,7 @@ The goal is to build a real shell from the ground up instead of wrapping an exis
 - Git branch shown in the prompt when inside a Git repository
 - Built-in `cd`
 - Built-in `pwd`
+- Built-in `cpufetch`, `gpufetch`, and `displayfetch` system information commands
 - Built-in `echo`
 - Built-in `alias` and `unalias`
 - Built-in `history` with persistent history storage
@@ -24,6 +25,20 @@ The goal is to build a real shell from the ground up instead of wrapping an exis
 - User configuration at `~/.config/carsonsh/config`
 - History stored at `~/.carsonsh_history`
 - Consecutive duplicate history entries are ignored
+
+## System fetch commands
+
+CarsonSH includes three built-in system information commands:
+
+```text
+cpufetch       Show CPU model, logical CPU count, and a short current-usage sample
+gpufetch       Show detected GPU and available utilization/memory information
+displayfetch   Show connected display modes and refresh rates when available
+```
+
+On Linux, `cpufetch` reads the CPU model from `/proc/cpuinfo` and samples total CPU usage from `/proc/stat`. `gpufetch` uses `nvidia-smi` for NVIDIA utilization and memory details when available, then falls back to `lspci` for GPU identification. `displayfetch` checks `xrandr`, then `wlr-randr`.
+
+On Windows, the GPU and display commands query Windows' `Win32_VideoController` information through PowerShell. GPU utilization is not currently reported by the Windows implementation. Unsupported or unavailable system interfaces are reported instead of guessed.
 
 ## Oh-My-Shell-inspired customization
 
