@@ -51,7 +51,7 @@ Some details depend on the operating system and installed utilities. For example
 Create an alias with `NAME=VALUE`:
 
 ```text
-alias ll=ls -la
+alias ll=ls
 alias cls=clear
 ```
 
@@ -67,7 +67,7 @@ Remove one:
 unalias ll
 ```
 
-Aliases are also read from `~/.config/carsonsh/config`.
+Aliases are also read from `~/.config/carsonsh/config`. The config parser supports values containing spaces, for example `alias ll=ls -la`; for an interactive alias command, keep the value to one command token.
 
 ## Command history
 
