@@ -253,32 +253,66 @@ jobs:
           update: true
           install: gcc zip
 
-      - name: Build and package Windows x64
+      - name: Build CarsonSH and stage Windows packages
         shell: msys2 {0}
         run: |
+          set -eu
           chmod +x build.sh
           CFLAGS='-std=c11 -Wall -Wextra -Wpedantic -O2 -static -static-libgcc' ./build.sh
           if [ -f build/carsonsh ] && [ ! -f build/carsonsh.exe ]; then mv build/carsonsh build/carsonsh.exe; fi
-          mkdir -p carsonsh-windows-x64
-          cp build/carsonsh.exe carsonsh-windows-x64/
+
+          mkdir -p dist/installer dist/portable/home/.config/carsonsh/themes dist/portable/home/.config/carsonsh/plugins
+
+          cp build/carsonsh.exe dist/installer/
           ldd build/carsonsh.exe | awk '/=> \/.*\.dll/ {print $3} /^\/.*\.dll/ {print $1}' | while read dll; do
-            [ -f "$dll" ] && cp -n "$dll" carsonsh-windows-x64/ || true
+            [ -f "$dll" ] && cp -n "$dll" dist/installer/ || true
           done
-          cat > carsonsh-windows-x64/README.txt <<'EOF'
-          CarsonSH for Windows x64
+          cp packaging/windows/carsonsh.cmd dist/installer/
+          cp others/examples/COMMAND-CHEATSHEET.md dist/installer/COMMAND-CHEATSHEET.md
 
-          Run carsonsh.exe from Windows Terminal or Command Prompt.
-          The included DLL files are runtime dependencies from MSYS2.
-          This is an experimental Windows build; some Unix commands and path conventions differ on Windows.
+          cp -a dist/installer/. dist/portable/
+          cp packaging/windows/CarsonSH-Portable.cmd dist/portable/
+          cp packaging/windows/config/config dist/portable/home/.config/carsonsh/config
+          cp framework/themes/*.conf dist/portable/home/.config/carsonsh/themes/
+          cp framework/plugins/*.conf dist/portable/home/.config/carsonsh/plugins/
+          cp README.md dist/portable/README.md
+          cat > dist/portable/README.txt <<'EOF'
+          CarsonSH Portable for Windows x64
 
-          If Unicode prompt symbols do not render correctly, set CARSONSH_ASCII=1 before launching CarsonSH.
+          1. Extract this entire folder to any drive or directory.
+          2. Run CarsonSH-Portable.cmd.
+          3. Your CarsonSH config, themes, plugins, and history stay inside this folder's home directory.
+
+          Do not move or delete only carsonsh.exe; keep the DLL files and home folder beside the launcher.
+          The normal carsonsh.cmd launcher uses your Windows user profile instead.
+          This is an experimental Windows build and depends on the bundled MSYS2 runtime DLLs.
           EOF
-          zip -r carsonsh-windows-x64.zip carsonsh-windows-x64
 
-      - name: Upload Windows build to the matching release
+          mkdir -p dist/release
+          cp -a dist/portable dist/release/carsonsh-windows-x64
+          cd dist/release
+          zip -r ../../carsonsh-windows-x64.zip carsonsh-windows-x64
+
+      - name: Compile Inno Setup installer
+        shell: pwsh
+        run: |
+          $iscc = "${env:ProgramFiles(x86)}\Inno Setup 6\ISCC.exe"
+          if (-not (Test-Path $iscc)) {
+            choco install innosetup --no-progress -y
+          }
+          if (-not (Test-Path $iscc)) {
+            throw "Inno Setup compiler was not found."
+          }
+          $version = "0.1.$env:GITHUB_RUN_NUMBER"
+          & $iscc "/DAppVersion=$version" "packaging\windows\CarsonSH.iss"
+          if ($LASTEXITCODE -ne 0) {
+            throw "Inno Setup compilation failed with exit code $LASTEXITCODE"
+          }
+
+      - name: Upload Windows installer and portable package to release
         env:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
           $tag = "v0.1.$env:GITHUB_RUN_NUMBER"
-          gh release upload $tag carsonsh-windows-x64.zip --clobber
+          gh release upload $tag carsonsh-windows-x64.zip dist\CarsonSH-Setup-x64.exe --clobber
