@@ -1,5 +1,10 @@
 # CarsonSH 🐚
 
+<p align="center">
+  <img src="assets/carsonsh-terminal.svg" alt="CarsonSH terminal logo" width="720">
+</p>
+
+
 CarsonSH is a small, experimental Unix shell written in C.
 
 The goal is to build a real shell from the ground up instead of wrapping an existing shell. CarsonSH is intended to run on Linux systems including Debian/Ubuntu-based distributions and Arch-based distributions such as EndeavourOS.
